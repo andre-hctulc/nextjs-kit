@@ -29,7 +29,8 @@ export function POST(request: NextRequest) {
 
 ## API
 
--   `send`
+-   `send` - Route Handler helper
+-   `proc` - Action helper
 -   `parseJSON`
 -   `parseFormData`
 -   `KitResponse`

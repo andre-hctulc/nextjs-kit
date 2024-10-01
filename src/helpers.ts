@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { ServerError } from "./server-error";
+import type { ErrorObject } from "./client";
 
 export async function parseJSON<T = any>(request: NextRequest): Promise<T> {
     if (request.headers.get("Content-Type") !== "application/json") {
@@ -31,7 +32,7 @@ export async function parseFormData(request: NextRequest): Promise<FormData> {
     }
 }
 
-export interface SendOptions {
+export interface SendLikeOptions {
     onError?: (error: unknown) => void;
     /**
      * Map non `ServerError`s  to `ServerError`s.
@@ -40,16 +41,18 @@ export interface SendOptions {
 }
 
 /**
+ * **Route Handler**
+ *
  * Catches `ServerError`s and sends them as JSON responses with the appropriate status code.
  * Non `ServerError`s are sent as a generic 500 error.
  */
 export async function send(
-    action: Response | Promise<Response> | (() => Response | Promise<Response>),
-    options: SendOptions = {}
+    sender: Response | Promise<Response> | (() => Response | Promise<Response>),
+    options: SendLikeOptions = {}
 ): Promise<Response> {
     try {
-        if (typeof action === "function") action = action();
-        return await action;
+        if (typeof sender === "function") sender = sender();
+        return await sender;
     } catch (err) {
         if (options.mapError && !(err instanceof ServerError)) {
             const mappedErr = options.mapError(err);
@@ -64,9 +67,38 @@ export async function send(
                 headers: { "Content-Type": "application/json" },
             });
         }
-        return new Response(JSON.stringify({ error: "Internal server error", status: 500 }), {
+        return new Response(JSON.stringify({ error: "Internal Server Error", status: 500 }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
         });
+    }
+}
+
+/**
+ * **Action**
+ *
+ * Catches `ServerError`s and sends them as JSON responses with the appropriate status code.
+ * Non `ServerError`s are sent as a generic 500 error.
+ */
+export async function proc<T>(
+    action: Promise<T> | (() => T | Promise<T>),
+    options: SendLikeOptions = {}
+): Promise<T | ErrorObject> {
+    try {
+        if (typeof action === "function") return await action();
+        return await action;
+    } catch (err) {
+        if (options.mapError && !(err instanceof ServerError)) {
+            const mappedErr = options.mapError(err);
+            if (mappedErr != null) err = mappedErr;
+        }
+
+        if (options.onError) options.onError(err);
+
+        if (err instanceof ServerError) {
+            return { error: err.getUserMessage(), status: err.getStatus(), __isErrorObj: true } as any;
+        }
+
+        return { error: "Internal Server Error", status: 500, __isErrorObj: true } as any;
     }
 }

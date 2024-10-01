@@ -3,6 +3,10 @@
     "version": "0.0.4",
     "description": "Some Next.JS utility",
     "main": "dist/index.js",
+    "exports": {
+        ".": "./dist/index.js",
+        "./client": "./dist/client/index.js"
+    },
     "scripts": {
         "tc": "tsc --noEmit",
         "tc:watch": "tsc --noEmit --watch",
