@@ -27,11 +27,12 @@ export function POST(request: NextRequest) {
 }
 ```
 
-## Helpers
+## API
 
 -   `send`
 -   `parseJSON`
 -   `parseFormData`
+-   `KitResponse`
 
 ## Error Handling
 
