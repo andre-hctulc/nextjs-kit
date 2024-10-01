@@ -8,6 +8,10 @@
         "tc:watch": "tsc --noEmit --watch",
         "build": "tsc"
     },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/andre-hctulc/nextjs-kit.git"
+    },
     "keywords": [],
     "author": "André Thomas",
     "license": "ISC",
