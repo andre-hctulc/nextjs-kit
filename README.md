@@ -1,6 +1,6 @@
 # nextjs-kit
 
-Some [NextJS](https://nextjs.org) utils.
+Some [Next.JS](https://nextjs.org) utils.
 
 ## Basic Usage
 
@@ -42,10 +42,11 @@ import { ServerError } from "nextjs-kit";
 
 if (typeof data.id !== "string") {
     // By default the user message is empty.
-    // To interpret the error message as the user message set `userMessage: true`
+    // To interpret the error message as the user message set `userMessage: true`.
+    // When `userMessage` is not provided the error message is derived from the status.
     throw new ServerError("ID is not a string. Got " + typeof data.id, {
         status: 400,
-        userMessage: "ID invalid",
+        userMessage: "Invalid ID",
     });
 }
 ```

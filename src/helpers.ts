@@ -36,7 +36,7 @@ export interface SendOptions {
     /**
      * Map non `ServerError`s  to `ServerError`s.
      */
-    mapError?: (error: unknown) => ServerError;
+    mapError?: (error: unknown) => ServerError | void | undefined | null;
 }
 
 /**
@@ -44,18 +44,19 @@ export interface SendOptions {
  * Non `ServerError`s are sent as a generic 500 error.
  */
 export async function send(
-    action: Promise<Response> | (() => Promise<Response>),
+    action: Response | Promise<Response> | (() => Response | Promise<Response>),
     options: SendOptions = {}
 ): Promise<Response> {
     try {
         if (typeof action === "function") action = action();
         return await action;
     } catch (err) {
-        if (options.onError) options.onError(err);
-
-        if (!(err instanceof ServerError) && options.mapError) {
-            err = options.mapError(err);
+        if (options.mapError && !(err instanceof ServerError)) {
+            const mappedErr = options.mapError(err);
+            if (mappedErr != null) err = mappedErr;
         }
+
+        if (options.onError) options.onError(err);
 
         if (err instanceof ServerError) {
             return new Response(JSON.stringify({ error: err.getUserMessage(), status: err.getStatus() }), {
