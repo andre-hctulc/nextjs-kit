@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-/** Extends the NextResponse with some helper functions. */
-export default class KitResponse extends NextResponse {
+/** Extends the `NextResponse` with some helper methods */
+export class KitResponse extends NextResponse {
     /**
      * Sends a response with the give status
      * @param status
