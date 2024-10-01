@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "target": "ES2021",
+        "module": "ESNext",
+        "strict": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "moduleResolution": "node",
+        "isolatedModules": true,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "alwaysStrict": true,
+        "skipLibCheck": true,
+        "outDir": "dist",
+        "declaration": true
+    },
+    "include": ["src/**/*"],
+    "exclude": ["*.test.ts"]
+}
