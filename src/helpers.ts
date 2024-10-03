@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { ServerError } from "./server-error";
 import type { ErrorObject } from "./client";
+import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect";
 
 export async function parseJSON<T = any>(request: NextRequest): Promise<T> {
     if (request.headers.get("Content-Type") !== "application/json") {
@@ -54,6 +56,9 @@ export async function send(
         if (typeof sender === "function") sender = sender();
         return await sender;
     } catch (err) {
+        // Throw next redirect errors. These errors are thrown by the next redirect function and should not be caught here
+        if (isRedirectError(err)) throw err;
+
         if (options.mapError && !(err instanceof ServerError)) {
             const mappedErr = options.mapError(err);
             if (mappedErr != null) err = mappedErr;
@@ -62,6 +67,10 @@ export async function send(
         if (options.onError) options.onError(err);
 
         if (err instanceof ServerError) {
+            if (err.shouldRedirect()) {
+                return redirect(err.getRedirect(), err.info.redirectType);
+            }
+
             return new Response(JSON.stringify({ error: err.getUserMessage(), status: err.getStatus() }), {
                 status: err.getStatus(),
                 headers: { "Content-Type": "application/json" },
@@ -88,6 +97,9 @@ export async function proc<T>(
         if (typeof action === "function") return await action();
         return await action;
     } catch (err) {
+        // Throw next redirect errors. These errors are thrown by the next redirect function and should not be caught here
+        if (isRedirectError(err)) throw err;
+
         if (options.mapError && !(err instanceof ServerError)) {
             const mappedErr = options.mapError(err);
             if (mappedErr != null) err = mappedErr;

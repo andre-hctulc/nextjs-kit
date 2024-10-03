@@ -1,3 +1,5 @@
+import type { RedirectType } from "next/navigation";
+
 export interface ServerErrorInfo {
     cause?: unknown;
     status?: number;
@@ -7,6 +9,11 @@ export interface ServerErrorInfo {
      */
     userMessage?: string | true;
     data?: any;
+    /**
+     * The URL to redirect to, when this error is thrown. Causes next's `redirect` to be called.
+     */
+    redirect?: string;
+    redirectType?: RedirectType;
 }
 
 export class ServerError extends Error {
@@ -25,6 +32,17 @@ export class ServerError extends Error {
      */
     getStatus(): number {
         return this.info.status ?? 500;
+    }
+
+    shouldRedirect(): boolean {
+        return !!this.info.redirect;
+    }
+
+    /**
+     * @returns The URL to redirect to, or an empty string if no redirect is specified.
+     */
+    getRedirect(): string {
+        return this.info.redirect || "";
     }
 }
 

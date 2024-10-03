@@ -21,7 +21,7 @@ export class KitResponse extends NextResponse {
      * @param value
      * @param init `ResponseInit`
      * */
-    static send(value: any, init?: ResponseInit) {
+    static send<T = any>(value: T, init?: ResponseInit) {
         if (value === null || value === undefined) return new Response(undefined, { status: 200, ...init });
         else if (value instanceof ReadableStream) return KitResponse.stream(value, init);
         else if (Buffer.isBuffer(value)) return KitResponse.blob(value, init);
