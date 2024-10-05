@@ -4,6 +4,9 @@ import type { ErrorObject } from "./client";
 import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect";
 
+/**
+ * Parses the request body as JSON and throws a `ServerError` (406 Not Accepted) if the content type is not `application/json`.
+ */
 export async function parseJSON<T = any>(request: NextRequest): Promise<T> {
     if (request.headers.get("Content-Type") !== "application/json") {
         throw new ServerError("Expected content type application/json", {
@@ -19,6 +22,9 @@ export async function parseJSON<T = any>(request: NextRequest): Promise<T> {
     }
 }
 
+/**
+ * Parses the request body as form data and throws a `ServerError` (406 Not Accepted) if the content type is not `multipart/form-data`.
+ */
 export async function parseFormData(request: NextRequest): Promise<FormData> {
     if (!request.headers.get("Content-Type")?.startsWith("multipart/form-data")) {
         throw new ServerError("Expected content type multipart/form-data", {
@@ -90,6 +96,8 @@ export async function send(
  *
  * Catches `ServerError`s and sends them as JSON responses with the appropriate status code.
  * Non `ServerError`s are sent as a generic 500 error.
+ *
+ * @returns The result of the action or an error object. Check if the result is an error object with `isErrorObject`
  */
 export async function proc<T>(
     action: Promise<T> | (() => T | Promise<T>),
