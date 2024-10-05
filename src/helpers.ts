@@ -57,7 +57,7 @@ const logError = (err: unknown) => {
         else if (err.info.log !== false && err.getStatus() >= 500) console.error(marker, err);
     } else {
         const marker = "** ? Error **\n";
-        console.error(err);
+        console.error(marker, err);
     }
 };
 
