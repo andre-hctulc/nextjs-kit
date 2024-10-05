@@ -14,6 +14,11 @@ export interface ServerErrorInfo {
      */
     redirect?: string;
     redirectType?: RedirectType;
+    /**
+     * Whether to log this error. Defaults to true.
+     * @default true
+     */
+    log?: boolean;
 }
 
 export class ServerError extends Error {

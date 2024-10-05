@@ -46,7 +46,20 @@ export interface SendLikeOptions {
      * Map non `ServerError`s  to `ServerError`s.
      */
     mapError?: (error: unknown) => ServerError | void | undefined | null;
+    logError?: boolean;
 }
+
+const logError = (err: unknown) => {
+    if (err instanceof ServerError) {
+        const marker = "** Server Error **\n";
+        if (err.info.log === true) console.error(marker, err);
+        // Log error only if server error (5xx)
+        else if (err.info.log !== false && err.getStatus() >= 500) console.error(marker, err);
+    } else {
+        const marker = "** ? Error **\n";
+        console.error(err);
+    }
+};
 
 /**
  * **Route Handler**
@@ -73,6 +86,8 @@ export async function send(
         }
 
         if (options.onError) options.onError(err);
+
+        if (options.logError !== false) logError(err);
 
         if (err instanceof ServerError) {
             if (err.shouldRedirect()) {
@@ -117,12 +132,21 @@ export async function proc<T>(
 
         if (options.onError) options.onError(err);
 
+        if (options.logError !== false) logError(err);
+
         if (err instanceof ServerError) {
             return { error: err.getUserMessage(), status: err.getStatus(), __isErrorObj: true } as any;
         }
 
         return { error: "Internal Server Error", status: 500, __isErrorObj: true } as any;
     }
+}
+
+export function initOnce<T>(key: string, value: T): T {
+    const glob = typeof window === "undefined" ? global : window;
+    if (key in glob) return (glob as any)[key];
+    (glob as any)[key] = value;
+    return value;
 }
 
 export enum HttpStatus {

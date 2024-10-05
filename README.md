@@ -4,12 +4,17 @@ Some [Next.JS](https://nextjs.org) utilities.
 
 ## Api
 
--   `send` - Route Handler helper
--   `proc` - Action helper
--   `parseJSON` - Parses a json request body
--   `parseFormData` - Parses a form data request body
--   `KitResponse` - Extends `NextResponse`
--   `useServerAction` - React hook for handling server actions
+-   Server
+    -   `send` - Route Handler helper
+    -   `proc` - Action helper
+    -   `parseJSON` - Parses a json request body
+    -   `parseFormData` - Parses a form data request body
+    -   `initOnce`
+    -   `KitResponse` - Extends `NextResponse`
+-   Client
+    -   `useServerAction` - React hook for handling server actions
+    -   `isErrorObject` - React hook for handling server actions
+    -   `isSuccessObject` - React hook for handling server actions
 
 ## Server Side
 
@@ -43,8 +48,10 @@ export function POST(request: NextRequest) {
 
 import { proc } from "nextjs-kit";
 
-export function createProjectAction(input: CreateProjectInput) {
-    return proc(createProject(input));
+// Note: Server actions must be async!
+export async function createProjectAction(input: CreateProjectInput) {
+    return proc(() => createProject(input));
+    // Or pass the promise directly:  proc(createProject(input));
 }
 ```
 
@@ -84,7 +91,7 @@ function handleCreate(data: CreateProjectInput) {
 
 `isErrorObject`
 
-Note: actions wrapped in `proc` **do not** throw Errors! 
+Note: actions wrapped in `proc` **do not** throw Errors!
 
 ```ts
 const result = await createProjectAction(input);

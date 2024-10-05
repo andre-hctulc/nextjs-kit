@@ -1,8 +1,13 @@
 import React from "react";
 import { ErrorObject, isErrorObject } from "./client";
 
+/**
+ * The return type of a server action, **excluding** error objects.
+ */
+export type ActionResponse<A extends ServerAction> = Exclude<Awaited<ReturnType<A>>, ErrorObject>;
+
 export type UserServerActionResult<A extends ServerAction, E = unknown> = {
-    data: Exclude<Awaited<ReturnType<A>>, ErrorObject> | undefined;
+    data: ActionResponse<A> | undefined;
     error: E | null;
     isPending: boolean;
     action: (...args: Parameters<A>) => Promise<void>;
@@ -13,7 +18,7 @@ export type UserServerActionResult<A extends ServerAction, E = unknown> = {
 type ServerAction = (...args: any) => any;
 
 export type UseServerActionOptions<A extends ServerAction, E = unknown> = {
-    onSuccess?: (data: Awaited<ReturnType<A>>) => void;
+    onSuccess?: (data: ActionResponse<A>) => void;
     onError?: (error: E, errorObject: ErrorObject | null) => void;
 };
 
@@ -26,9 +31,7 @@ export function useServerAction<A extends ServerAction, E = unknown>(
     options?: UseServerActionOptions<A, E>
 ): UserServerActionResult<A, E> {
     const [isPending, startTransition] = React.useTransition();
-    const [data, setData] = React.useState<Exclude<Awaited<ReturnType<A>>, ErrorObject> | undefined>(
-        undefined
-    );
+    const [data, setData] = React.useState<ActionResponse<A> | undefined>(undefined);
     const [isSuccess, setIsSuccess] = React.useState(false);
     const [error, setError] = React.useState<E | null>(null);
     const [errorObject, setErrorObject] = React.useState<ErrorObject | null>(null);
