@@ -1,6 +1,6 @@
 {
     "name": "@andre-hctulc/nextjs-kit",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "description": "Some Next.JS utility",
     "main": "dist/index.js",
     "exports": {
