@@ -1,8 +1,19 @@
 # nextjs-kit
 
-Some [Next.JS](https://nextjs.org) utils.
+Some [Next.JS](https://nextjs.org) utilities.
 
-## Basic Usage
+## Api
+
+-   `send` - Route Handler helper
+-   `proc` - Action helper
+-   `parseJSON` - Parses a json request body
+-   `parseFormData` - Parses a form data request body
+-   `KitResponse` - Extends `NextResponse`
+-   `useServerAction` - React hook for handling server actions
+
+## Server Side
+
+`send` and `proc` are boundaries for catching and handling `ServerError`s
 
 ```ts
 import { send } from "nextjs-kit";
@@ -20,24 +31,24 @@ import { send, parseJSON } from "nextjs-kit";
 
 export function POST(request: NextRequest) {
     return send(async () => {
-        const data = await parseJSON(request);
-        const newItem = await create(data);
-        return Response.json(newItem.id);
+        const input = await parseJSON(request);
+        const newProjectId = await createProject(input);
+        return Response.json(newProjectId);
     });
 }
 ```
 
-## API
+```ts
+"use server";
 
--   `send` - Route Handler helper
--   `proc` - Action helper
--   `parseJSON`
--   `parseFormData`
--   `KitResponse`
+import { proc } from "nextjs-kit";
 
-## Error Handling
+export function createProjectAction(input: CreateProjectInput) {
+    return proc(createProject(input));
+}
+```
 
-Send catches all errors and maps `ServerError`s to appropriate responses. Other errors are mapped to a generic _500_ response.
+### Error Handling
 
 ```ts
 import { ServerError } from "nextjs-kit";
@@ -50,5 +61,33 @@ if (typeof data.id !== "string") {
         status: 400,
         userMessage: "Invalid ID",
     });
+}
+```
+
+For non `ServerError`s a generic _500_ response is sent.
+
+## Client Side
+
+### Examples
+
+`useServerAction`
+
+```ts
+import { isErrorObject, useServerAction } from "nextjs-kit";
+
+const { action, isPending, data, error, errorObject, isSuccess } = useServerAction(createProjectAction);
+
+function handleCreate(data: CreateProjectInput) {
+    action(data);
+}
+```
+
+`isErrorObject`
+
+Note: actions wrapped in `proc` **do not** throw Errors! 
+
+```ts
+const result = await createProjectAction(input);
+if(isErrorObject(result)) return handleError(result);
 }
 ```
