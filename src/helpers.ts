@@ -46,12 +46,17 @@ export interface SendLikeOptions {
      * Map non `ServerError`s  to `ServerError`s.
      */
     mapError?: (error: unknown) => ServerError | void | undefined | null;
-    logError?: boolean;
+    /**
+     * Set to `false` to disable error logging.
+     * @default true
+     */
+    logErrors?: boolean;
 }
 
 const logError = (err: unknown) => {
     if (err instanceof ServerError) {
         const marker = "** Server Error **\n";
+        // Log if explicitly set to true
         if (err.info.log === true) console.error(marker, err);
         // Log error only if server error (5xx)
         else if (err.info.log !== false && err.getStatus() >= 500) console.error(marker, err);
@@ -87,7 +92,7 @@ export async function send(
 
         if (options.onError) options.onError(err);
 
-        if (options.logError !== false) logError(err);
+        if (options.logErrors !== false) logError(err);
 
         if (err instanceof ServerError) {
             if (err.shouldRedirect()) {
@@ -132,7 +137,7 @@ export async function proc<T>(
 
         if (options.onError) options.onError(err);
 
-        if (options.logError !== false) logError(err);
+        if (options.logErrors !== false) logError(err);
 
         if (err instanceof ServerError) {
             return { error: err.getUserMessage(), status: err.getStatus(), __isErrorObj: true } as any;
@@ -142,11 +147,13 @@ export async function proc<T>(
     }
 }
 
-export function initOnce<T>(key: string, value: T): T {
-    const glob = typeof window === "undefined" ? global : window;
-    if (key in glob) return (glob as any)[key];
-    (glob as any)[key] = value;
-    return value;
+/**
+ * @param key The key to store the value in the global object.
+ */
+export function initOnce<T>(key: string, value: () => T): T {
+    const glob: any = typeof window === "undefined" ? global : window;
+    if (key in glob) return glob[key];
+    return (glob[key] = value());
 }
 
 export enum HttpStatus {
@@ -154,7 +161,6 @@ export enum HttpStatus {
     CONTINUE = 100,
     SWITCHING_PROTOCOLS = 101,
     PROCESSING = 102,
-
     // 2xx Success
     OK = 200,
     CREATED = 201,
@@ -166,7 +172,6 @@ export enum HttpStatus {
     MULTI_STATUS = 207,
     ALREADY_REPORTED = 208,
     IM_USED = 226,
-
     // 3xx Redirection
     MULTIPLE_CHOICES = 300,
     MOVED_PERMANENTLY = 301,
@@ -177,7 +182,6 @@ export enum HttpStatus {
     SWITCH_PROXY = 306,
     TEMPORARY_REDIRECT = 307,
     PERMANENT_REDIRECT = 308,
-
     // 4xx Client Errors
     BAD_REQUEST = 400,
     UNAUTHORIZED = 401,
@@ -208,7 +212,6 @@ export enum HttpStatus {
     TOO_MANY_REQUESTS = 429,
     REQUEST_HEADER_FIELDS_TOO_LARGE = 431,
     UNAVAILABLE_FOR_LEGAL_REASONS = 451,
-
     // 5xx Server Errors
     INTERNAL_SERVER_ERROR = 500,
     NOT_IMPLEMENTED = 501,
