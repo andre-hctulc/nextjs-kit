@@ -47,19 +47,15 @@ export interface SendLikeOptions {
      */
     mapError?: (error: unknown) => ServerError | void | undefined | null;
     /**
-     * Set to `false` to disable error logging.
-     * @default true
+     * @default "all"
      */
-    logErrors?: boolean;
+    errorLogs?: "5xx" | "all" | "disabled";
 }
 
 const logError = (err: unknown) => {
     if (err instanceof ServerError) {
-        const marker = "** Server Error **\n";
-        // Log if explicitly set to true
-        if (err.info.log === true) console.error(marker, err);
-        // Log error only if server error (5xx)
-        else if (err.info.log !== false && err.getStatus() >= 500) console.error(marker, err);
+        const marker = `** Server Error (${err.getStatus()}) **\n`;
+        console.error(marker, err);
     } else {
         const marker = "** ? Error **\n";
         console.error(marker, err);
@@ -92,18 +88,31 @@ export async function send(
 
         if (options.onError) options.onError(err);
 
-        if (options.logErrors !== false) logError(err);
+        const logAll = !options.errorLogs || options.errorLogs === "all";
 
         if (err instanceof ServerError) {
+            const status = err.getStatus();
+
+            // Log server errors
+            if (logAll || (options.errorLogs === "5xx" && status >= 500)) {
+                logError(err);
+            }
+
             if (err.shouldRedirect()) {
                 return redirect(err.getRedirect(), err.info.redirectType);
             }
 
-            return new Response(JSON.stringify({ error: err.getUserMessage(), status: err.getStatus() }), {
-                status: err.getStatus(),
+            return new Response(JSON.stringify({ error: err.getUserMessage(), status }), {
+                status,
                 headers: { "Content-Type": "application/json" },
             });
+        } else {
+            // Log unknown errors
+            if (logAll || options.errorLogs === "5xx") {
+                logError(err);
+            }
         }
+
         return new Response(JSON.stringify({ error: "Internal Server Error", status: 500 }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
@@ -137,7 +146,7 @@ export async function proc<T>(
 
         if (options.onError) options.onError(err);
 
-        if (options.logErrors !== false) logError(err);
+        if (options.errorLogs !== "disabled") logError(err);
 
         if (err instanceof ServerError) {
             return { error: err.getUserMessage(), status: err.getStatus(), __isErrorObj: true } as any;

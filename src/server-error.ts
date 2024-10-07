@@ -14,11 +14,6 @@ export interface ServerErrorInfo {
      */
     redirect?: string;
     redirectType?: RedirectType;
-    /**
-     * By default all `ServerError`s with status code >= 500 are logged.
-     * Set this explicitly to control logging for this error.
-     */
-    log?: boolean;
 }
 
 export class ServerError extends Error {
