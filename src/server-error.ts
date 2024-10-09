@@ -2,6 +2,9 @@ import type { RedirectType } from "next/navigation";
 
 export interface ServerErrorInfo {
     cause?: unknown;
+    /**
+     * @default 500
+     */
     status?: number;
     /**
      * If true, the message is interpreted as the user message.

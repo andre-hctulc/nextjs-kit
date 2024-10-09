@@ -157,12 +157,24 @@ export async function proc<T>(
 }
 
 /**
- * @param key The key to store the value in the global object.
+ * @param key Unique key for the value.
  */
 export function initOnce<T>(key: string, value: () => T): T {
     const glob: any = typeof window === "undefined" ? global : window;
+    key = "@initOnce:" + key;
     if (key in glob) return glob[key];
     return (glob[key] = value());
+}
+
+/**
+ * @param key Unique key for the action.
+ */
+export function doOnce<T>(key: string, action: () => T) {
+    const glob: any = typeof window === "undefined" ? global : window;
+    key = "@doOnce:" + key;
+    if (key in glob) return;
+    glob[key] = "done";
+    action();
 }
 
 export enum HttpStatus {

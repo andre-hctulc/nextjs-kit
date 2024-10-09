@@ -10,6 +10,7 @@ Some [Next.JS](https://nextjs.org) utilities.
     -   `parseJSON` - Parses a json request body
     -   `parseFormData` - Parses a form data request body
     -   `initOnce`
+    -   `doOnce`
     -   `KitResponse` - Extends `NextResponse`
 -   Client
     -   `useServerAction` - React hook for handling server actions
