@@ -1,4 +1,4 @@
-export type ErrorObject = { error: string; status: number };
+export type ErrorObject = { error: string; status: number; tags: string[] };
 
 export function isErrorObject(obj: any): obj is ErrorObject {
     return (

@@ -102,10 +102,13 @@ export async function send(
                 return redirect(err.getRedirect(), err.info.redirectType);
             }
 
-            return new Response(JSON.stringify({ error: err.getUserMessage(), status }), {
-                status,
-                headers: { "Content-Type": "application/json" },
-            });
+            return new Response(
+                JSON.stringify({ error: err.getUserMessage(), status, tags: err.getTags() }),
+                {
+                    status,
+                    headers: { "Content-Type": "application/json" },
+                }
+            );
         } else {
             // Log unknown errors
             if (logAll || options.errorLogs === "5xx") {
@@ -113,7 +116,7 @@ export async function send(
             }
         }
 
-        return new Response(JSON.stringify({ error: "Internal Server Error", status: 500 }), {
+        return new Response(JSON.stringify({ error: "Internal Server Error", status: 500, tags: [] }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
         });
@@ -148,11 +151,18 @@ export async function proc<T>(
 
         if (options.errorLogs !== "disabled") logError(err);
 
+        // Server error
         if (err instanceof ServerError) {
-            return { error: err.getUserMessage(), status: err.getStatus(), __isErrorObj: true } as any;
+            return {
+                error: err.getUserMessage(),
+                status: err.getStatus(),
+                tags: err.getTags(),
+                __isErrorObj: true,
+            } as any;
         }
 
-        return { error: "Internal Server Error", status: 500, __isErrorObj: true } as any;
+        // Unknown error
+        return { error: "Internal Server Error", status: 500, tags: [], __isErrorObj: true } as any;
     }
 }
 

@@ -7,6 +7,8 @@ export interface ServerErrorInfo {
      */
     status?: number;
     /**
+     * **⚠️** This message is sent to the client!
+     *
      * If true, the message is interpreted as the user message.
      * By default the user message is inferred from the status code.
      */
@@ -17,6 +19,10 @@ export interface ServerErrorInfo {
      */
     redirect?: string;
     redirectType?: RedirectType;
+    /** 
+     * **⚠️** Tags are are sent to the client! 
+     * */
+    tags?: string[];
 }
 
 export class ServerError extends Error {
@@ -41,11 +47,19 @@ export class ServerError extends Error {
         return !!this.info.redirect;
     }
 
+    getTags(): string[] {
+        return this.info.tags || [];
+    }
+
     /**
      * @returns The URL to redirect to, or an empty string if no redirect is specified.
      */
     getRedirect(): string {
         return this.info.redirect || "";
+    }
+
+    static is(e: unknown, status?: number): e is ServerError {
+        return e instanceof ServerError && (status === undefined || e.getStatus() === status);
     }
 }
 
