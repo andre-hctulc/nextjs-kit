@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-/** Extends the `NextResponse` with some helper methods */
+/** Extends the `NextResponse` with `send`, `sendStatus`, `blob` and `stream`. */
 export class KitResponse extends NextResponse {
     /**
      * Sends a response with the give status

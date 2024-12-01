@@ -19,7 +19,7 @@ Some [Next.JS](https://nextjs.org) utilities.
 
 ## Server Side
 
-`send` and `proc` are boundaries for catching and handling `ServerError`s
+`send` and `act` are boundaries for catching and handling `ServerError`s
 
 ```ts
 import { send } from "nextjs-kit";
@@ -47,12 +47,12 @@ export function POST(request: NextRequest) {
 ```ts
 "use server";
 
-import { proc } from "nextjs-kit";
+import { act } from "nextjs-kit";
 
 // Note: Server actions must be async!
 export async function createProjectAction(input: CreateProjectInput) {
-    return proc(() => createProject(input));
-    // Or pass the promise directly:  proc(createProject(input));
+    return act(() => createProject(input));
+    // Or pass the promise directly:  act(createProject(input));
 }
 ```
 
@@ -92,7 +92,7 @@ function handleCreate(data: CreateProjectInput) {
 
 `isErrorObject`
 
-Note: actions wrapped in `proc` **do not** throw Errors!
+Note: actions wrapped in `act` **do not** throw Errors!
 
 ```ts
 const result = await createProjectAction(input);

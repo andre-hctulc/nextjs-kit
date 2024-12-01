@@ -131,7 +131,7 @@ export async function send(
  *
  * @returns The result of the action or an error object. Check if the result is an error object with `isErrorObject`
  */
-export async function proc<T>(
+export async function act<T>(
     action: Promise<T> | (() => T | Promise<T>),
     options: SendLikeOptions = {}
 ): Promise<T | ErrorObject> {
