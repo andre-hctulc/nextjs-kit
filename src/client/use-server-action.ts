@@ -1,5 +1,5 @@
 import React from "react";
-import { ErrorObject, isErrorObject } from "./client";
+import { ErrorObject, isErrorObject } from "./client.js";
 
 /**
  * The return type of a server action, **excluding** error objects.
@@ -30,60 +30,58 @@ export function useServerAction<A extends ServerAction, E = unknown>(
     action: A,
     options?: UseServerActionOptions<A, E>
 ): UserServerActionResult<A, E> {
-    const [isPending, startTransition] = React.useTransition();
+    const [isPending, setIsPending] = React.useState(false);
     const [data, setData] = React.useState<ActionResponse<A> | undefined>(undefined);
     const [isSuccess, setIsSuccess] = React.useState(false);
     const [error, setError] = React.useState<E | null>(null);
     const [errorObject, setErrorObject] = React.useState<ErrorObject | null>(null);
     const abortController = React.useRef<AbortController | null>(null);
 
-    const act = React.useCallback(
-        async (...args: Parameters<A>) => {
-            if (abortController.current) {
-                abortController.current.abort();
+    const act = React.useCallback(async (...args: Parameters<A>) => {
+        if (abortController.current) {
+            abortController.current.abort();
+        }
+
+        const currentAbortController = (abortController.current = new AbortController());
+
+        setData(undefined);
+        setIsSuccess(false);
+        setError(null);
+        setErrorObject(null);
+        setIsPending(true);
+
+        try {
+            const result = await action(...args);
+            const isErrObj = isErrorObject(result);
+
+            if (!isErrObj && options?.onSuccess) options.onSuccess(result);
+
+            if (currentAbortController.signal.aborted) return;
+
+            // Check if the result is an error object produced by `proc`
+            // If it is, set the error object and throw an error to propagate to error boundary
+            if (isErrObj) {
+                setErrorObject(result);
+                const err: any = new Error(result.error);
+                err.__errorObject = result;
+                throw err;
             }
 
-            const currentAbortController = (abortController.current = new AbortController());
-
-            setData(undefined);
-            setIsSuccess(false);
+            setData(result);
+            setIsSuccess(true);
             setError(null);
             setErrorObject(null);
+        } catch (err) {
+            if (options?.onError) options.onError(err as E, (err as any)?.__errorObject || null);
 
-            startTransition(async () => {
-                try {
-                    const result = await action(...args);
-                    const isErrObj = isErrorObject(result);
-
-                    if (!isErrObj && options?.onSuccess) options.onSuccess(result);
-
-                    if (currentAbortController.signal.aborted) return;
-
-                    // Check if the result is an error object produced by `proc`
-                    // If it is, set the error object and throw an error to propagate to error boundary
-                    if (isErrObj) {
-                        setErrorObject(result);
-                        const err: any = new Error(result.error);
-                        err.__errorObject = result;
-                        throw err;
-                    }
-
-                    setData(result);
-                    setIsSuccess(true);
-                    setError(null);
-                    setErrorObject(null);
-                } catch (err) {
-                    if (options?.onError) options.onError(err as E, (err as any)?.__errorObject || null);
-
-                    if (currentAbortController.signal.aborted) return;
-                    setError(err as E);
-                    setData(undefined);
-                    setIsSuccess(false);
-                }
-            });
-        },
-        [startTransition]
-    );
+            if (currentAbortController.signal.aborted) return;
+            setError(err as E);
+            setData(undefined);
+            setIsSuccess(false);
+        } finally {
+            setIsPending(false);
+        }
+    }, []);
 
     // Cleanup
     React.useEffect(() => {

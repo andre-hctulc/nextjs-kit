@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "next/server.js";
 
 /** Extends the `NextResponse` with `send`, `sendStatus`, `blob` and `stream`. */
 export class KitResponse extends NextResponse {

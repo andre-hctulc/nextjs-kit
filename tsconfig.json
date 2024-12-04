@@ -1,18 +1,19 @@
 {
     "compilerOptions": {
         "target": "ES2020",
-        "module": "ES2022",
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
         "strict": true,
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
-        "moduleResolution": "node",
         "isolatedModules": true,
         "noImplicitAny": true,
         "noImplicitThis": true,
         "alwaysStrict": true,
         "skipLibCheck": true,
         "outDir": "dist",
-        "declaration": true
+        "declaration": true,
+        "jsx": "react"
     },
     "include": ["src/**/*"],
     "exclude": ["*.test.ts"]

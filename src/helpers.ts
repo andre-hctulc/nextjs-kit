@@ -1,8 +1,8 @@
-import { NextRequest } from "next/server";
-import { ServerError } from "./server-error";
-import type { ErrorObject } from "./client";
-import { redirect } from "next/navigation";
-import { isRedirectError } from "next/dist/client/components/redirect";
+import { NextRequest } from "next/server.js";
+import { ServerError } from "./server-error.js";
+import type { ErrorObject } from "./client/index.js";
+import { redirect } from "next/navigation.js";
+import { isRedirectError } from "next/dist/client/components/redirect.js";
 
 /**
  * Parses the request body as JSON and throws a `ServerError` (406 Not Accepted) if the content type is not `application/json`.

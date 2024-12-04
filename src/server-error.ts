@@ -1,4 +1,4 @@
-import type { RedirectType } from "next/navigation";
+import type { RedirectType } from "next/navigation.js";
 
 export interface ServerErrorInfo {
     cause?: unknown;

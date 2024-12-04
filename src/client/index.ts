@@ -1,2 +1,2 @@
-export * from "./client";
-export * from "./use-server-action";
+export * from "./client.js";
+export * from "./use-server-action.js";
