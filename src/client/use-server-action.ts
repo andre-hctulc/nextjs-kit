@@ -23,8 +23,7 @@ export type UseServerActionOptions<A extends ServerAction, E = unknown> = {
 };
 
 /**
- * Leverages React's `useTransition` to provide a hook that handles server actions.
- * Errors (including `ErrorObject`s produced by `proc`) are caught and provided in the result.
+ * Errors (including  {@link ErrorObject}s produced by  {@link act} are caught and provided in the result.
  */
 export function useServerAction<A extends ServerAction, E = unknown>(
     action: A,
@@ -81,15 +80,6 @@ export function useServerAction<A extends ServerAction, E = unknown>(
         } finally {
             setIsPending(false);
         }
-    }, []);
-
-    // Cleanup
-    React.useEffect(() => {
-        return () => {
-            if (abortController.current) {
-                abortController.current.abort();
-            }
-        };
     }, []);
 
     return { isPending, action: act, error, errorObject, data, isSuccess };

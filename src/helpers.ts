@@ -5,7 +5,7 @@ import { redirect } from "next/navigation.js";
 import { isRedirectError } from "next/dist/client/components/redirect.js";
 
 /**
- * Parses the request body as JSON and throws a `ServerError` (406 Not Accepted) if the content type is not `application/json`.
+ * Parses the request body as JSON and throws a {@link ServerError} (406 Not Accepted) if the content type is not _application/json_.
  */
 export async function parseJSON<T = any>(request: NextRequest): Promise<T> {
     if (request.headers.get("Content-Type") !== "application/json") {
@@ -23,7 +23,7 @@ export async function parseJSON<T = any>(request: NextRequest): Promise<T> {
 }
 
 /**
- * Parses the request body as form data and throws a `ServerError` (406 Not Accepted) if the content type is not `multipart/form-data`.
+ * Parses the request body as form data and throws a  {@link ServerError} (406 Not Accepted) if the content type is not _multipart/form-data_.
  */
 export async function parseFormData(request: NextRequest): Promise<FormData> {
     if (!request.headers.get("Content-Type")?.startsWith("multipart/form-data")) {
@@ -43,7 +43,7 @@ export async function parseFormData(request: NextRequest): Promise<FormData> {
 export interface SendLikeOptions {
     onError?: (error: unknown) => void;
     /**
-     * Map non `ServerError`s  to `ServerError`s.
+     * Map non  {@link ServerError}s  to  {@link ServerError}s.
      */
     mapError?: (error: unknown) => ServerError | void | undefined | null;
     /**
@@ -65,8 +65,8 @@ const logError = (err: unknown) => {
 /**
  * **Route Handler**
  *
- * Catches `ServerError`s and sends them as JSON responses with the appropriate status code.
- * Non `ServerError`s are sent as a generic 500 error.
+ * Catches  {@link ServerError}s and sends them as JSON responses with the appropriate status code.
+ * Non  {@link ServerError}s are sent as a generic 500 error.
  *
  * Do **not** use this in middleware
  */
@@ -126,10 +126,10 @@ export async function send(
 /**
  * **Action**
  *
- * Catches `ServerError`s and sends them as JSON responses with the appropriate status code.
- * Non `ServerError`s are sent as a generic 500 error.
+ * Catches  {@link ServerError}s and sends them as JSON responses with the appropriate status code.
+ * Non  {@link ServerError}s are sent as a generic 500 error.
  *
- * @returns The result of the action or an error object. Check if the result is an error object with `isErrorObject`
+ * @returns The result of the action or an error object. Check if the result is an error object with {@link isErrorObject}
  */
 export async function act<T>(
     action: Promise<T> | (() => T | Promise<T>),
