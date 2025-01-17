@@ -25,7 +25,7 @@ export async function parseJSON<T = any>(request: NextRequest): Promise<T> {
 /**
  * Parses search param values into an array.
  */
-export function searchParams<R = false>(
+export function searchParam<R = false>(
     value: string | string[] | undefined,
     required?: R
 ): R extends true ? string[] : string[] | undefined {
