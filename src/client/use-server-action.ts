@@ -35,6 +35,11 @@ export function useServerAction<A extends ServerAction, E = unknown>(
     const [error, setError] = React.useState<E | null>(null);
     const [errorObject, setErrorObject] = React.useState<ErrorObject | null>(null);
     const abortController = React.useRef<AbortController | null>(null);
+    const a = React.useRef(action);
+
+    React.useEffect(() => {
+        a.current = action;
+    }, [action]);
 
     const act = React.useCallback(async (...args: Parameters<A>) => {
         if (abortController.current) {
@@ -50,7 +55,7 @@ export function useServerAction<A extends ServerAction, E = unknown>(
         setIsPending(true);
 
         try {
-            const result = await action(...args);
+            const result = await a.current(...args);
             const isErrObj = isErrorObject(result);
 
             if (!isErrObj && options?.onSuccess) options.onSuccess(result);

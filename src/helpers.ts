@@ -23,6 +23,16 @@ export async function parseJSON<T = any>(request: NextRequest): Promise<T> {
 }
 
 /**
+ * Parses search param values into an array.
+ */
+export function searchParams<R = false>(
+    value: string | string[] | undefined,
+    required?: R
+): R extends true ? string[] : string[] | undefined {
+    return Array.isArray(value) ? value : value ? [value] : required ? [] : (undefined as any);
+}
+
+/**
  * Parses the request body as form data and throws a  {@link ServerError} (406 Not Accepted) if the content type is not _multipart/form-data_.
  */
 export async function parseFormData(request: NextRequest): Promise<FormData> {
