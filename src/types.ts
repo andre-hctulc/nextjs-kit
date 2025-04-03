@@ -1,6 +1,8 @@
+export type SearchParamValue = string | undefined | string[];
+
 export interface PageProps {
     params: Promise<{ [key: string]: string }>;
-    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+    searchParams: Promise<{ [key: string]: SearchParamValue }>;
 }
 
 export interface LayoutProps {

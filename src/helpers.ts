@@ -24,12 +24,20 @@ export async function parseJSON<T = any>(request: NextRequest): Promise<T> {
 
 /**
  * Parses search param values into an array.
+ * @param required Return empty array instead of undefined when the search param is not present.
  */
 export function searchParam<R = false>(
     value: string | string[] | undefined,
     required?: R
 ): R extends true ? string[] : string[] | undefined {
     return Array.isArray(value) ? value : value ? [value] : required ? [] : (undefined as any);
+}
+
+/**
+ * Gets the first search param value.
+ */
+export function firstSearchParam(value: string | string[] | undefined): string | undefined {
+    return Array.isArray(value) ? value[0] : value ? value : undefined;
 }
 
 /**

@@ -16,6 +16,7 @@ Some [Next.JS](https://nextjs.org) utilities.
     -   `useServerAction` - React hook for handling server actions
     -   `isErrorObject` - React hook for handling server actions
     -   `isSuccessObject` - React hook for handling server actions
+    -   `searchParam` - Parses a search param value
 
 ## Server Side
 
