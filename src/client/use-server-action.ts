@@ -1,5 +1,7 @@
+"use client";
+
 import React from "react";
-import { ErrorObject, isErrorObject } from "./client.js";
+import { ErrorObject, isErrorObject } from "./client-util.js";
 
 /**
  * The return type of a server action, **excluding** error objects.

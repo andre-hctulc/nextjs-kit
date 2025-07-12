@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server.js";
 
-/** 
- * Extends the {@link NextResponse} 
+/**
+ * Extends the {@link NextResponse}
  * */
 export class KitResponse extends NextResponse {
     /**
@@ -38,7 +38,7 @@ export class KitResponse extends NextResponse {
     static blob(value: Buffer, init?: ResponseInit) {
         const headers = new Headers(init?.headers || {});
         headers.set("content-type", "application/octet-stream");
-        return new Response(value, { status: 200, ...init, headers });
+        return new Response(new Blob([value.buffer as ArrayBuffer]), { status: 200, ...init, headers });
     }
 
     /**

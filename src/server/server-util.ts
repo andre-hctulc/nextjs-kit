@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server.js";
 import { ServerError } from "./server-error.js";
-import type { ErrorObject } from "./client/index.js";
+import type { ErrorObject } from "../client/index.js";
 import { redirect } from "next/navigation.js";
 import { isRedirectError } from "next/dist/client/components/redirect.js";
 
@@ -22,22 +22,22 @@ export async function parseJSON<T = any>(request: NextRequest): Promise<T> {
     }
 }
 
-/**
- * Parses search param values into an array.
- * @param required Return empty array instead of undefined when the search param is not present.
- */
-export function searchParam<R = false>(
-    value: string | string[] | undefined,
-    required?: R
-): R extends true ? string[] : string[] | undefined {
-    return Array.isArray(value) ? value : value ? [value] : required ? [] : (undefined as any);
+export function paramValue<T>(value: T | T[] | undefined): T | undefined {
+    if (Array.isArray(value)) {
+        return value[0];
+    } else {
+        return value;
+    }
 }
 
-/**
- * Gets the first search param value.
- */
-export function firstSearchParam(value: string | string[] | undefined): string | undefined {
-    return Array.isArray(value) ? value[0] : value ? value : undefined;
+export function paramValues<T>(value: T | T[] | undefined): T[] {
+    if (Array.isArray(value)) {
+        return value;
+    } else if (value !== undefined) {
+        return [value];
+    } else {
+        return [];
+    }
 }
 
 /**

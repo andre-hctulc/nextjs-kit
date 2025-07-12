@@ -1,4 +1,4 @@
-export type SearchParamValue = string | undefined | string[];
+type SearchParamValue = string | undefined | string[];
 
 export interface PageProps {
     params: Promise<{ [key: string]: string }>;
