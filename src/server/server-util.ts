@@ -22,24 +22,6 @@ export async function parseJSON<T = any>(request: NextRequest): Promise<T> {
     }
 }
 
-export function paramValue<T>(value: T | T[] | undefined): T | undefined {
-    if (Array.isArray(value)) {
-        return value[0];
-    } else {
-        return value;
-    }
-}
-
-export function paramValues<T>(value: T | T[] | undefined): T[] {
-    if (Array.isArray(value)) {
-        return value;
-    } else if (value !== undefined) {
-        return [value];
-    } else {
-        return [];
-    }
-}
-
 /**
  * Parses the request body as form data and throws a  {@link ServerError} (406 Not Accepted) if the content type is not _multipart/form-data_.
  */
