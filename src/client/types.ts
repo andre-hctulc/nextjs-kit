@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 type SearchParamValue = string | undefined | string[];
 
 export interface PageProps {
@@ -5,7 +7,7 @@ export interface PageProps {
     searchParams: Promise<{ [key: string]: SearchParamValue }>;
 }
 
-export interface LayoutProps {
-    children?: React.ReactNode;
+export type LayoutProps = {
+    children?: ReactNode;
     params: Promise<{ [key: string]: string }>;
-}
+} & { [slot: string]: ReactNode };
