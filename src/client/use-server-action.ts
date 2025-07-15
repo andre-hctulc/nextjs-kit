@@ -1,15 +1,10 @@
 "use client";
 
-import React from "react";
-import { ErrorObject, isErrorObject } from "./client-util.js";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ErrorObject, SuccessObject } from "./client-util.js";
 
-/**
- * The return type of a server action, **excluding** error objects.
- */
-export type ActionResponse<A extends ServerAction> = Exclude<Awaited<ReturnType<A>>, ErrorObject>;
-
-export type UserServerActionResult<A extends ServerAction, E = unknown> = {
-    data: ActionResponse<A> | undefined;
+export type UserServerActionResult<T, A extends ServerAction<T>, E = unknown> = {
+    data: T | undefined;
     error: E | null;
     isPending: boolean;
     action: (...args: Parameters<A>) => Promise<void>;
@@ -17,33 +12,33 @@ export type UserServerActionResult<A extends ServerAction, E = unknown> = {
     isSuccess: boolean;
 };
 
-type ServerAction = (...args: any) => any;
+type ServerAction<T> = (...args: any) => SuccessObject<T> | ErrorObject;
 
-export type UseServerActionOptions<A extends ServerAction, E = unknown> = {
-    onSuccess?: (data: ActionResponse<A>) => void;
-    onError?: (error: E, errorObject: ErrorObject | null) => void;
+export type UseServerActionOptions<T, E = unknown> = {
+    onSuccess?: (data: SuccessObject<T>) => void;
+    onError?: (errorObject: ErrorObject | null, error: unknown) => void;
 };
 
 /**
  * Errors (including  {@link ErrorObject}s produced by  {@link act} are caught and provided in the result.
  */
-export function useServerAction<A extends ServerAction, E = unknown>(
-    action: A,
-    options?: UseServerActionOptions<A, E>
-): UserServerActionResult<A, E> {
-    const [isPending, setIsPending] = React.useState(false);
-    const [data, setData] = React.useState<ActionResponse<A> | undefined>(undefined);
-    const [isSuccess, setIsSuccess] = React.useState(false);
-    const [error, setError] = React.useState<E | null>(null);
-    const [errorObject, setErrorObject] = React.useState<ErrorObject | null>(null);
-    const abortController = React.useRef<AbortController | null>(null);
-    const a = React.useRef(action);
+export function useServerAction<T, S extends ServerAction<T>>(
+    action: ServerAction<T>,
+    options?: UseServerActionOptions<T>
+): UserServerActionResult<T, S> {
+    const [isPending, setIsPending] = useState(false);
+    const [data, setData] = useState<T | undefined>(undefined);
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [error, setError] = useState<unknown>(null);
+    const [errorObject, setErrorObject] = useState<ErrorObject | null>(null);
+    const abortController = useRef<AbortController | null>(null);
+    const a = useRef(action);
 
-    React.useEffect(() => {
+    useEffect(() => {
         a.current = action;
     }, [action]);
 
-    const act = React.useCallback(async (...args: Parameters<A>) => {
+    const act = useCallback(async (...args: Parameters<S>) => {
         if (abortController.current) {
             abortController.current.abort();
         }
@@ -57,31 +52,31 @@ export function useServerAction<A extends ServerAction, E = unknown>(
         setIsPending(true);
 
         try {
-            const result = await a.current(...args);
-            const isErrObj = isErrorObject(result);
-
-            if (!isErrObj && options?.onSuccess) options.onSuccess(result);
+            const resultObj = await a.current(...args);
+            const isErrObj = resultObj.error;
 
             if (currentAbortController.signal.aborted) return;
+
+            if (!isErrObj && options?.onSuccess) options.onSuccess(resultObj);
 
             // Check if the result is an error object produced by `proc`
             // If it is, set the error object and throw an error to propagate to error boundary
             if (isErrObj) {
-                setErrorObject(result);
-                const err: any = new Error(result.error);
-                err.__errorObject = result;
+                setErrorObject(resultObj);
+                const err: any = new Error(resultObj.errorMessage);
+                err.__errorObject = resultObj;
                 throw err;
             }
 
-            setData(result);
+            setData(resultObj.data);
             setIsSuccess(true);
             setError(null);
             setErrorObject(null);
         } catch (err) {
-            if (options?.onError) options.onError(err as E, (err as any)?.__errorObject || null);
-
             if (currentAbortController.signal.aborted) return;
-            setError(err as E);
+
+            if (options?.onError) options.onError((err as any)?.__errorObject || null, err);
+            setError(err);
             setData(undefined);
             setIsSuccess(false);
         } finally {
