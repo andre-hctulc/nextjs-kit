@@ -1,7 +1,6 @@
-import { NextRequest } from "next/server.js";
+import { NextRequest, NextResponse } from "next/server.js";
 import { ServerError } from "./server-error.js";
-import type { ErrorObject } from "../client/index.js";
-import { redirect } from "next/navigation.js";
+import type { ErrorObject, SuccessObject } from "../client/index.js";
 import { isRedirectError } from "next/dist/client/components/redirect.js";
 
 /**
@@ -99,16 +98,13 @@ export async function send(
             }
 
             if (err.shouldRedirect()) {
-                return redirect(err.getRedirect(), err.info.redirectType);
+                return NextResponse.redirect(err.getRedirect());
             }
 
-            return new Response(
-                JSON.stringify({ error: err.getUserMessage(), status, tags: err.getTags() }),
-                {
-                    status,
-                    headers: { "Content-Type": "application/json" },
-                }
-            );
+            return new Response(JSON.stringify(err.createBody()), {
+                status,
+                headers: { "Content-Type": "application/json" },
+            });
         } else {
             // Log unknown errors
             if (logAll || options.errorLogs === "5xx") {
@@ -116,10 +112,20 @@ export async function send(
             }
         }
 
-        return new Response(JSON.stringify({ error: "Internal Server Error", status: 500, tags: [] }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" },
-        });
+        return new Response(
+            JSON.stringify({
+                errorMessage: "Internal Server Error",
+                error: true,
+                status: 500,
+                details: {},
+                success: false,
+                data: null,
+            } satisfies ErrorObject),
+            {
+                status: 500,
+                headers: { "Content-Type": "application/json" },
+            }
+        );
     }
 }
 
@@ -134,10 +140,12 @@ export async function send(
 export async function act<T>(
     action: Promise<T> | (() => T | Promise<T>),
     options: SendLikeOptions = {}
-): Promise<T | ErrorObject> {
+): Promise<SuccessObject<T> | ErrorObject> {
     try {
-        if (typeof action === "function") return await action();
-        return await action;
+        let result: any;
+        if (typeof action === "function") result = await action();
+        else result = await action;
+        return { success: true, data: result, error: null };
     } catch (err) {
         // Throw next redirect errors. These errors are thrown by the next redirect function and should not be caught here
         if (isRedirectError(err)) throw err;
@@ -156,7 +164,7 @@ export async function act<T>(
             return {
                 error: err.getUserMessage(),
                 status: err.getStatus(),
-                tags: err.getTags(),
+                tags: err.getDetails(),
                 __isErrorObj: true,
             } as any;
         }

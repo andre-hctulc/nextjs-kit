@@ -1,4 +1,4 @@
-import type { RedirectType } from "next/navigation.js";
+import { ErrorObject } from "../client/client-util.js";
 
 export interface ServerErrorInfo {
     cause?: unknown;
@@ -18,11 +18,10 @@ export interface ServerErrorInfo {
      * The URL to redirect to, when this error is thrown. Causes next's `redirect` to be called.
      */
     redirect?: string;
-    redirectType?: RedirectType;
-    /** 
-     * **⚠️** Tags are are sent to the client! 
+    /**
+     * **⚠️** Details are are sent to the client!
      * */
-    tags?: string[];
+    details?: Record<string, any>;
 }
 
 export class ServerError extends Error {
@@ -47,8 +46,8 @@ export class ServerError extends Error {
         return !!this.info.redirect;
     }
 
-    getTags(): string[] {
-        return this.info.tags || [];
+    getDetails() {
+        return this.info.details || {};
     }
 
     /**
@@ -56,6 +55,17 @@ export class ServerError extends Error {
      */
     getRedirect(): string {
         return this.info.redirect || "";
+    }
+
+    createBody(): ErrorObject {
+        return {
+            error: true,
+            errorMessage: this.getUserMessage(),
+            status: this.getStatus(),
+            details: this.getDetails(),
+            success: false,
+            data: null,
+        };
     }
 
     static is(e: unknown, status?: number): e is ServerError {
