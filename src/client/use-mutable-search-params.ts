@@ -10,6 +10,7 @@ interface UseMutableSearchParamsResult {
     searchParams: ReadonlyURLSearchParams;
     setSearchParams: (params: SearchInput, options?: SetParamOptions) => void;
     setSearchParam: (key: string, value: ParamValue, options?: SetParamOptions) => void;
+    deleteSearchParam?: (key: string) => void;
 }
 
 interface SetParamOptions {
@@ -47,9 +48,19 @@ export function useMutableSearchParams(): UseMutableSearchParamsResult {
         [setSearchParams]
     );
 
+    const deleteSearchParam = useCallback(
+        (key: string) => {
+            const newSearch = new URLSearchParams(search.toString());
+            newSearch.delete(key);
+            push(`?${newSearch.toString()}`);
+        },
+        [push, search]
+    );
+
     return {
         searchParams: search,
         setSearchParams,
         setSearchParam,
+        deleteSearchParam,
     };
 }
