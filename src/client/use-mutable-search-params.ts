@@ -2,12 +2,19 @@
 
 import { ReadonlyURLSearchParams, useRouter, useSearchParams } from "next/navigation.js";
 import { useCallback } from "react";
+import { normalizeSearch, SearchInput } from "../util.js";
 
-type SearchInput = URLSearchParams | Record<string, string[] | undefined> | string;
+type ParamValue = string | boolean | number | (string | boolean | number)[];
 
 interface UseMutableSearchParamsResult {
     searchParams: ReadonlyURLSearchParams;
-    setSearchParams: (params: SearchInput, replace?: boolean) => void;
+    setSearchParams: (params: SearchInput, options?: SetParamOptions) => void;
+    setSearchParam: (key: string, value: ParamValue, options?: SetParamOptions) => void;
+}
+
+interface SetParamOptions {
+    replace?: boolean;
+    append?: boolean;
 }
 
 export function useMutableSearchParams(): UseMutableSearchParamsResult {
@@ -15,22 +22,16 @@ export function useMutableSearchParams(): UseMutableSearchParamsResult {
     const { push } = useRouter();
 
     const setSearchParams = useCallback(
-        (params: SearchInput, replace = false) => {
-            const newSearch = replace ? new URLSearchParams() : new URLSearchParams(search.toString());
+        (params: SearchInput, options?: SetParamOptions) => {
+            const newSearch = normalizeSearch(params);
 
-            if (typeof params === "string") {
-                newSearch.set("next", params);
-            } else if (params instanceof URLSearchParams) {
-                Array.from(params.entries()).forEach(([key, value]) => {
-                    newSearch.append(key, value);
-                });
-            } else if (typeof params === "object") {
-                Object.entries(params).forEach(([key, value]) => {
-                    if (Array.isArray(value)) {
-                        value.forEach((v) => newSearch.append(key, v));
-                    } else if (value !== undefined) {
-                        newSearch.set(key, value);
+            if (!options?.replace) {
+                const oldParams = new URLSearchParams(search.toString());
+                oldParams.forEach((value, key) => {
+                    if (!options?.append && newSearch.has(key)) {
+                        return;
                     }
+                    newSearch.append(key, value);
                 });
             }
 
@@ -39,8 +40,16 @@ export function useMutableSearchParams(): UseMutableSearchParamsResult {
         [push, search]
     );
 
+    const setSearchParam = useCallback(
+        (key: string, value: ParamValue, options?: SetParamOptions) => {
+            setSearchParams({ [key]: value }, options);
+        },
+        [setSearchParams]
+    );
+
     return {
         searchParams: search,
         setSearchParams,
+        setSearchParam,
     };
 }
