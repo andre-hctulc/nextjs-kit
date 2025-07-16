@@ -2,7 +2,7 @@
 
 import { ReadonlyURLSearchParams, useRouter, useSearchParams } from "next/navigation.js";
 import { useCallback } from "react";
-import { normalizeSearch, SearchInput } from "../util.js";
+import { normalizeSearch, SearchInput } from "../system.js";
 
 type ParamValue = string | boolean | number | (string | boolean | number)[];
 
@@ -11,6 +11,9 @@ interface UseMutableSearchParamsResult {
     setSearchParams: (params: SearchInput, options?: SetParamOptions) => void;
     setSearchParam: (key: string, value: ParamValue, options?: SetParamOptions) => void;
     deleteSearchParam: (key: string) => void;
+    setSearchParamsUrl: (params: SearchInput, options?: SetParamOptions) => string;
+    setSearchParamUrl: (key: string, value: ParamValue, options?: SetParamOptions) => string;
+    deleteSearchParamUrl: (key: string) => string;
 }
 
 interface SetParamOptions {
@@ -22,10 +25,9 @@ export function useMutableSearchParams(): UseMutableSearchParamsResult {
     const search = useSearchParams();
     const { push } = useRouter();
 
-    const setSearchParams = useCallback(
+    const setSearchParamsUrl = useCallback(
         (params: SearchInput, options?: SetParamOptions) => {
             const newSearch = normalizeSearch(params);
-
             if (!options?.replace) {
                 const oldParams = new URLSearchParams(search.toString());
                 oldParams.forEach((value, key) => {
@@ -35,10 +37,24 @@ export function useMutableSearchParams(): UseMutableSearchParamsResult {
                     newSearch.append(key, value);
                 });
             }
-
-            push(`?${params.toString()}`);
+            return `?${newSearch.toString()}`;
         },
-        [push, search]
+        [search]
+    );
+
+    const setSearchParams = useCallback(
+        (params: SearchInput, options?: SetParamOptions) => {
+            const url = setSearchParamsUrl(params, options);
+            push(url);
+        },
+        [push, setSearchParamsUrl]
+    );
+
+    const setSearchParamUrl = useCallback(
+        (key: string, value: ParamValue, options?: SetParamOptions) => {
+            return setSearchParamsUrl({ [key]: value }, options);
+        },
+        [setSearchParamsUrl]
     );
 
     const setSearchParam = useCallback(
@@ -48,13 +64,21 @@ export function useMutableSearchParams(): UseMutableSearchParamsResult {
         [setSearchParams]
     );
 
-    const deleteSearchParam = useCallback(
+    const deleteSearchParamUrl = useCallback(
         (key: string) => {
             const newSearch = new URLSearchParams(search.toString());
             newSearch.delete(key);
-            push(`?${newSearch.toString()}`);
+            return `?${newSearch.toString()}`;
         },
-        [push, search]
+        [search]
+    );
+
+    const deleteSearchParam = useCallback(
+        (key: string) => {
+            const url = deleteSearchParamUrl(key);
+            push(url);
+        },
+        [push, deleteSearchParamUrl]
     );
 
     return {
@@ -62,5 +86,8 @@ export function useMutableSearchParams(): UseMutableSearchParamsResult {
         setSearchParams,
         setSearchParam,
         deleteSearchParam,
+        setSearchParamsUrl,
+        setSearchParamUrl,
+        deleteSearchParamUrl,
     };
 }
