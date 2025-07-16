@@ -10,7 +10,7 @@ interface UseMutableSearchParamsResult {
     searchParams: ReadonlyURLSearchParams;
     setSearchParams: (params: SearchInput, options?: SetParamOptions) => void;
     setSearchParam: (key: string, value: ParamValue, options?: SetParamOptions) => void;
-    deleteSearchParam?: (key: string) => void;
+    deleteSearchParam: (key: string) => void;
 }
 
 interface SetParamOptions {
