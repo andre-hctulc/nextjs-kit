@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ErrorObject, SuccessObject } from "./client-util.js";
+import { ErrorObject, isErrorObject } from "./client-util.js";
+import { isRedirectError } from "next/dist/client/components/redirect.js";
 
 export type UserServerActionResult<T, A extends ServerAction<T>, E = unknown> = {
     data: T | undefined;
@@ -12,10 +13,10 @@ export type UserServerActionResult<T, A extends ServerAction<T>, E = unknown> = 
     isSuccess: boolean;
 };
 
-type ServerAction<T> = (...args: any) => SuccessObject<T> | ErrorObject;
+type ServerAction<T> = (...args: any) => Promise<T>;
 
 export type UseServerActionOptions<T, E = unknown> = {
-    onSuccess?: (data: SuccessObject<T>) => void;
+    onSuccess?: (data: T) => void;
     onError?: (errorObject: ErrorObject | null, error: unknown) => void;
 };
 
@@ -52,27 +53,32 @@ export function useServerAction<T, S extends ServerAction<T>>(
         setIsPending(true);
 
         try {
-            const resultObj = await a.current(...args);
-            const isErrObj = resultObj.error;
+            const result = await a.current(...args);
+            const isErrObj = isErrorObject(result);
 
             if (currentAbortController.signal.aborted) return;
 
-            if (!isErrObj && options?.onSuccess) options.onSuccess(resultObj);
+            if (!isErrObj && options?.onSuccess) {
+                options.onSuccess(result);
+            }
 
             // Check if the result is an error object produced by `proc`
             // If it is, set the error object and throw an error to propagate to error boundary
             if (isErrObj) {
-                setErrorObject(resultObj);
-                const err: any = new Error(resultObj.errorMessage);
-                err.__errorObject = resultObj;
+                setErrorObject(result);
+                const err: any = new Error(result.errorMessage);
+                err.__errorObject = result;
                 throw err;
             }
 
-            setData(resultObj.data);
+            setData(result);
             setIsSuccess(true);
             setError(null);
             setErrorObject(null);
         } catch (err) {
+            if (isRedirectError(err)) {
+                throw err;
+            }
             if (currentAbortController.signal.aborted) return;
 
             if (options?.onError) options.onError((err as any)?.__errorObject || null, err);
