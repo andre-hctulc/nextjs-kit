@@ -14,3 +14,18 @@ export type LayoutProps = {
     children?: ReactNode;
     params: Promise<{ [key: string]: string }>;
 } & { [slot: string]: ReactNode };
+
+export type ErrorObject = {
+    error: true;
+    errorMessage: string;
+    status: number;
+    details: Record<string, any>;
+    success: false;
+    data: null;
+};
+
+export type SuccessObject<T> = {
+    error: null;
+    success: true;
+    data: T;
+};

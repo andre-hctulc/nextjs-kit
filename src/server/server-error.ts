@@ -1,4 +1,4 @@
-import { ErrorObject } from "../client/client-util.js";
+import { ErrorObject } from "../types.js";
 
 export interface ServerErrorInfo {
     cause?: unknown;

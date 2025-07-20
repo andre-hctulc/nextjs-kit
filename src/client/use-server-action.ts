@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ErrorObject, isErrorObject } from "./client-util.js";
 import { isRedirectError } from "next/dist/client/components/redirect.js";
+import { ErrorObject } from "../types.js";
 
 type ServerAction = (...args: any) => Promise<any>;
 type ServerActionResult<T> = T extends ServerAction ? ReturnType<T> : never;
@@ -56,21 +56,11 @@ export function useServerAction<S extends ServerAction>(
 
         try {
             const result = await a.current(...args);
-            const isErrObj = isErrorObject(result);
 
             if (currentAbortController.signal.aborted) return;
 
-            if (!isErrObj && options?.onSuccess) {
+            if (options?.onSuccess) {
                 options.onSuccess(result);
-            }
-
-            // Check if the result is an error object produced by `proc`
-            // If it is, set the error object and throw an error to propagate to error boundary
-            if (isErrObj) {
-                setErrorObject(result);
-                const err: any = new Error(result.errorMessage);
-                err.__errorObject = result;
-                throw err;
             }
 
             setData(result);
