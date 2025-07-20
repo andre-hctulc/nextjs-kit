@@ -4,16 +4,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ErrorObject, isErrorObject } from "./client-util.js";
 import { isRedirectError } from "next/dist/client/components/redirect.js";
 
-export type UserServerActionResult<T, A extends ServerAction<T>, E = unknown> = {
-    data: T | undefined;
-    error: E | null;
+type ServerAction = (...args: any) => Promise<any>;
+type ServerActionResult<T> = T extends ServerAction ? ReturnType<T> : never;
+type ServerActionParameters<T> = T extends (...args: infer P) => any ? P : never;
+
+export type UserServerActionResult<S extends ServerAction> = {
+    data: ServerActionResult<S> | undefined;
+    error: unknown | null;
     isPending: boolean;
-    action: (...args: Parameters<A>) => Promise<void>;
+    action: (...args: ServerActionParameters<S>) => Promise<void>;
     errorObject: ErrorObject | null;
     isSuccess: boolean;
 };
-
-type ServerAction<T> = (...args: any) => Promise<T>;
 
 export type UseServerActionOptions<T, E = unknown> = {
     onSuccess?: (data: T) => void;
@@ -23,12 +25,12 @@ export type UseServerActionOptions<T, E = unknown> = {
 /**
  * Errors (including  {@link ErrorObject}s produced by  {@link act} are caught and provided in the result.
  */
-export function useServerAction<T, S extends ServerAction<T>>(
-    action: ServerAction<T>,
-    options?: UseServerActionOptions<T>
-): UserServerActionResult<T, S> {
+export function useServerAction<S extends ServerAction>(
+    action: S,
+    options?: UseServerActionOptions<ServerActionResult<S>>
+): UserServerActionResult<S> {
     const [isPending, setIsPending] = useState(false);
-    const [data, setData] = useState<T | undefined>(undefined);
+    const [data, setData] = useState<ServerActionResult<S> | undefined>(undefined);
     const [isSuccess, setIsSuccess] = useState(false);
     const [error, setError] = useState<unknown>(null);
     const [errorObject, setErrorObject] = useState<ErrorObject | null>(null);
