@@ -21,7 +21,7 @@ export interface ServerErrorInfo {
     /**
      * **⚠️** Details are are sent to the client!
      * */
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
 }
 
 export class ServerError extends Error {
@@ -59,12 +59,11 @@ export class ServerError extends Error {
 
     createBody(): ErrorObject {
         return {
-            error: true,
-            errorMessage: this.getUserMessage(),
-            status: this.getStatus(),
-            details: this.getDetails(),
+            error: this,
             success: false,
-            data: null,
+            data: undefined,
+            details: this.getDetails(),
+            error_message: this.getUserMessage(),
         };
     }
 

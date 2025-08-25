@@ -16,12 +16,12 @@ export type LayoutProps = {
 } & { [slot: string]: ReactNode };
 
 export type ErrorObject = {
-    error: true;
-    errorMessage: string;
-    status: number;
-    details: Record<string, any>;
+    error: unknown;
     success: false;
-    data: null;
+    data: undefined;
+    details?: Record<string, any>;
+    error_message?: string;
+    [key: string]: unknown;
 };
 
 export type SuccessObject<T> = {

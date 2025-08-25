@@ -48,7 +48,7 @@ export interface SendLikeOptions {
     /**
      * @default "all"
      */
-    errorLogs?: "5xx" | "all" | "disabled";
+    errorLogs?: "all" | "disabled" | "5xx";
 }
 
 const logError = (err: unknown) => {
@@ -82,7 +82,7 @@ export async function send(
 
         if (options.mapError && !(err instanceof ServerError)) {
             const mappedErr = options.mapError(err);
-            if (mappedErr != null) err = mappedErr;
+            if (mappedErr) err = mappedErr;
         }
 
         if (options.onError) options.onError(err);
@@ -107,19 +107,19 @@ export async function send(
             });
         } else {
             // Log unknown errors
-            if (logAll || options.errorLogs === "5xx") {
+            if (logAll) {
                 logError(err);
             }
         }
 
         return new Response(
             JSON.stringify({
-                errorMessage: "Internal Server Error",
+                error_message: "Internal Server Error",
                 error: true,
                 status: 500,
                 details: {},
                 success: false,
-                data: null,
+                data: undefined,
             } satisfies ErrorObject),
             {
                 status: 500,
@@ -150,27 +150,16 @@ export async function act<T>(
         // Throw next redirect errors. These errors are thrown by the next redirect function and should not be caught here
         if (isRedirectError(err)) throw err;
 
-        if (options.mapError && !(err instanceof ServerError)) {
+        if (options.mapError) {
             const mappedErr = options.mapError(err);
-            if (mappedErr != null) err = mappedErr;
+            if (mappedErr) err = mappedErr;
         }
 
         if (options.onError) options.onError(err);
-
         if (options.errorLogs !== "disabled") logError(err);
 
-        // Server error
-        if (err instanceof ServerError) {
-            return {
-                error: err.getUserMessage(),
-                status: err.getStatus(),
-                tags: err.getDetails(),
-                __isErrorObj: true,
-            } as any;
-        }
-
         // Unknown error
-        return { error: "Internal Server Error", status: 500, tags: [], __isErrorObj: true } as any;
+        return { error: err, data: undefined, success: false };
     }
 }
 

@@ -10,33 +10,51 @@ interface UseMutableSearchParamsResult {
     searchParams: ReadonlyURLSearchParams;
     setSearchParams: (params: SearchInput, options?: SetParamOptions) => void;
     setSearchParam: (key: string, value: ParamValue, options?: SetParamOptions) => void;
-    deleteSearchParam: (key: string) => void;
+    deleteSearchParam: (key: string, options?: SetParamOptions) => void;
     setSearchParamsUrl: (params: SearchInput, options?: SetParamOptions) => string;
     setSearchParamUrl: (key: string, value: ParamValue, options?: SetParamOptions) => string;
     deleteSearchParamUrl: (key: string) => string;
 }
 
 interface SetParamOptions {
+    /**
+     * Replace the current history entry instead of pushing a new one.
+     */
     replace?: boolean;
+    /**
+     * Append search param instead of overwriting existing ones.
+     */
     append?: boolean;
+    /**
+     * Overwrite all existing params instead of merging them
+     */
+    overwrite?: boolean;
 }
 
 export function useMutableSearchParams(): UseMutableSearchParamsResult {
     const search = useSearchParams();
-    const { push } = useRouter();
+    const { push, replace } = useRouter();
 
     const setSearchParamsUrl = useCallback(
         (params: SearchInput, options?: SetParamOptions) => {
-            const newSearch = normalizeSearch(params);
-            if (!options?.replace) {
-                const oldParams = new URLSearchParams(search.toString());
-                oldParams.forEach((value, key) => {
-                    if (!options?.append && newSearch.has(key)) {
+            const normalizedInput = normalizeSearch(params);
+            const newSearch = new URLSearchParams();
+
+            if (!options?.overwrite) {
+                const oldSearch = new URLSearchParams(search.toString());
+
+                oldSearch.forEach((value, key) => {
+                    if (!options?.append && normalizedInput.has(key)) {
                         return;
                     }
                     newSearch.append(key, value);
                 });
             }
+
+            normalizedInput.forEach((value, key) => {
+                newSearch.append(key, value);
+            });
+
             return `?${newSearch.toString()}`;
         },
         [search]
@@ -45,9 +63,13 @@ export function useMutableSearchParams(): UseMutableSearchParamsResult {
     const setSearchParams = useCallback(
         (params: SearchInput, options?: SetParamOptions) => {
             const url = setSearchParamsUrl(params, options);
-            push(url);
+            if (options?.replace) {
+                push(url);
+            } else {
+                replace(url);
+            }
         },
-        [push, setSearchParamsUrl]
+        [push, replace, setSearchParamsUrl]
     );
 
     const setSearchParamUrl = useCallback(
@@ -65,7 +87,7 @@ export function useMutableSearchParams(): UseMutableSearchParamsResult {
     );
 
     const deleteSearchParamUrl = useCallback(
-        (key: string) => {
+        (key: string, options?: Pick<SetParamOptions, "replace">) => {
             const newSearch = new URLSearchParams(search.toString());
             newSearch.delete(key);
             return `?${newSearch.toString()}`;
@@ -74,9 +96,13 @@ export function useMutableSearchParams(): UseMutableSearchParamsResult {
     );
 
     const deleteSearchParam = useCallback(
-        (key: string) => {
-            const url = deleteSearchParamUrl(key);
-            push(url);
+        (key: string, options?: SetParamOptions) => {
+            const url = deleteSearchParamUrl(key, options);
+            if (options?.replace) {
+                replace(url);
+            } else {
+                push(url);
+            }
         },
         [push, deleteSearchParamUrl]
     );
