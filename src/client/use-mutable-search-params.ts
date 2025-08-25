@@ -10,10 +10,12 @@ interface UseMutableSearchParamsResult {
     searchParams: ReadonlyURLSearchParams;
     setSearchParams: (params: SearchInput, options?: SetParamOptions) => void;
     setSearchParam: (key: string, value: ParamValue, options?: SetParamOptions) => void;
-    deleteSearchParam: (key: string, options?: SetParamOptions) => void;
     setSearchParamsUrl: (params: SearchInput, options?: SetParamOptions) => string;
     setSearchParamUrl: (key: string, value: ParamValue, options?: SetParamOptions) => string;
     deleteSearchParamUrl: (key: string) => string;
+    deleteSearchParam: (key: string, options?: Pick<SetParamOptions, "replace">) => void;
+    deleteSearchParamsUrl: (keys: string[]) => string;
+    deleteSearchParams: (keys: string[], options?: Pick<SetParamOptions, "replace">) => void;
 }
 
 interface SetParamOptions {
@@ -87,7 +89,7 @@ export function useMutableSearchParams(): UseMutableSearchParamsResult {
     );
 
     const deleteSearchParamUrl = useCallback(
-        (key: string, options?: Pick<SetParamOptions, "replace">) => {
+        (key: string) => {
             const newSearch = new URLSearchParams(search.toString());
             newSearch.delete(key);
             return `?${newSearch.toString()}`;
@@ -97,7 +99,7 @@ export function useMutableSearchParams(): UseMutableSearchParamsResult {
 
     const deleteSearchParam = useCallback(
         (key: string, options?: SetParamOptions) => {
-            const url = deleteSearchParamUrl(key, options);
+            const url = deleteSearchParamUrl(key);
             if (options?.replace) {
                 replace(url);
             } else {
@@ -105,6 +107,27 @@ export function useMutableSearchParams(): UseMutableSearchParamsResult {
             }
         },
         [push, deleteSearchParamUrl]
+    );
+
+    const deleteSearchParamsUrl = useCallback(
+        (keys: string[]) => {
+            const newSearch = new URLSearchParams(search.toString());
+            keys.forEach((key) => newSearch.delete(key));
+            return `?${newSearch.toString()}`;
+        },
+        [search]
+    );
+
+    const deleteSearchParams = useCallback(
+        (keys: string[], options?: Pick<SetParamOptions, "replace">) => {
+            const url = deleteSearchParamsUrl(keys);
+            if (options?.replace) {
+                replace(url);
+            } else {
+                push(url);
+            }
+        },
+        [push, deleteSearchParamsUrl]
     );
 
     return {
@@ -115,5 +138,7 @@ export function useMutableSearchParams(): UseMutableSearchParamsResult {
         setSearchParamsUrl,
         setSearchParamUrl,
         deleteSearchParamUrl,
+        deleteSearchParamsUrl,
+        deleteSearchParams,
     };
 }
