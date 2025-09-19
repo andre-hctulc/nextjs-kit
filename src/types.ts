@@ -13,7 +13,7 @@ export interface PageProps {
 export type LayoutProps = {
     children?: ReactNode;
     params: Promise<{ [key: string]: string }>;
-} & { [slot: string]: ReactNode };
+} & Partial<{ [slot: string]: ReactNode }>;
 
 export type ErrorObject = {
     error: unknown;
