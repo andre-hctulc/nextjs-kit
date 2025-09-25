@@ -20,11 +20,12 @@ interface ProxyConfig {
     /**
      * A function that can modify the response (e.g. to add security headers).
      * Also receives the request as second parameter with `context` property.
-     * 
+     *
      * Use {@link applySecurityHeaders} to add common security headers and remove identifying headers.
      */
     enhanceResponse?: EnhanceResponse;
     methods?: string[];
+    rewritePath?: (path: string) => string;
 }
 
 type Handler = (request: NextRequest, params: { params: { path: string[] } }) => Promise<Response>;
@@ -48,8 +49,13 @@ type ProxyHandlers = {
 export function createProxyHandlers(proxyUrl: string, config: ProxyConfig = {}): ProxyHandlers {
     async function handleProxy(request: NextRequest, { params }: { params: { path: string[] } }) {
         // Build target URL
-        const resourcePath = params.path.join("/");
-        const url = `${proxyUrl}/${resourcePath}${request.nextUrl.search}`;
+        let path = params.path.join("/");
+        if (config.rewritePath) {
+            path = config.rewritePath(path);
+        }
+        if (!path.startsWith("/")) path = `/${path}`;
+
+        const url = `${proxyUrl}${path}${request.nextUrl.search}`;
 
         // Copy request headers except hop-by-hop ones
         const headers: HeadersInit = {};

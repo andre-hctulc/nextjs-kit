@@ -3,3 +3,7 @@ export interface CommonErrorBody {
     details: any;
     error: string;
 }
+
+export type RouteContext = {
+    params: Record<string, string>;
+};
