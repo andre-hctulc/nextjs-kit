@@ -1,5 +1,5 @@
 export interface CommonErrorBody {
-    code: string;
+    code: number;
     details: any;
     error: string;
 }
