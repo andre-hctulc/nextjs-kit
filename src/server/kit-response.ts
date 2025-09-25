@@ -11,8 +11,8 @@ export class KitResponse extends NextResponse {
      * @param body Response body
      * @param init `ResponseInit`
      * */
-    static sendStatus(status: number, body: any, init?: ResponseInit) {
-        return  KitResponse.send(body, {
+    static status(status: number, body: any, init?: ResponseInit) {
+        return KitResponse.value(body, {
             status: status,
             ...init,
         });
@@ -24,7 +24,7 @@ export class KitResponse extends NextResponse {
      * @param body Common error body
      * @param init `ResponseInit`
      * */
-    static sendError(status: number, body: CommonErrorBody, init?: ResponseInit) {
+    static commonError(status: number, body: CommonErrorBody, init?: ResponseInit) {
         return new KitResponse(JSON.stringify(body), {
             status: status,
             ...init,
@@ -36,7 +36,7 @@ export class KitResponse extends NextResponse {
      * @param value
      * @param init `ResponseInit`
      * */
-    static send<T = any>(value: T, init?: ResponseInit) {
+    static value<T = any>(value: T, init?: ResponseInit) {
         if (value === null || value === undefined) return new Response(undefined, { status: 200, ...init });
         else if (value instanceof ReadableStream) return KitResponse.stream(value, init);
         else if (Buffer.isBuffer(value)) return KitResponse.blob(value, init);
