@@ -1,19 +1,32 @@
 import { NextResponse } from "next/server.js";
+import { CommonErrorBody } from "./server-types.js";
 
 /**
  * Extends the {@link NextResponse}
  * */
 export class KitResponse extends NextResponse {
     /**
-     * Sends a response with the give status
+     * Sends a response with the given status
      * @param status
-     * @param statusText Status message
+     * @param body Response body
      * @param init `ResponseInit`
      * */
-    static sendStatus(status: number, statusText: string, init?: ResponseInit & { body?: BodyInit }) {
-        return new KitResponse(init?.body, {
+    static sendStatus(status: number, body: any, init?: ResponseInit) {
+        return  KitResponse.send(body, {
             status: status,
-            statusText: statusText,
+            ...init,
+        });
+    }
+
+    /**
+     * Sends an error with the given status
+     * @param status
+     * @param body Common error body
+     * @param init `ResponseInit`
+     * */
+    static sendError(status: number, body: CommonErrorBody, init?: ResponseInit) {
+        return new KitResponse(JSON.stringify(body), {
+            status: status,
             ...init,
         });
     }

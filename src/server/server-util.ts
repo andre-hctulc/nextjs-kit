@@ -253,3 +253,87 @@ export enum HttpStatus {
     NOT_EXTENDED = 510,
     NETWORK_AUTHENTICATION_REQUIRED = 511,
 }
+
+/**
+ * Merge multiple {@link RequestInit} objects into one.
+ * - Later objects override earlier ones.
+ * - Headers are merged case-insensitively.
+ */
+export function mergeRequests(...requests: (RequestInit | undefined)[]): RequestInit {
+    const result: RequestInit = {};
+    const headers = new Headers();
+
+    for (const req of requests) {
+        if (!req) continue;
+
+        // Method
+        if (req.method) result.method = req.method;
+
+        // Body
+        if (req.body !== undefined) result.body = req.body;
+
+        // Mode, credentials, cache, redirect, referrerPolicy, etc.
+        for (const key of [
+            "mode",
+            "credentials",
+            "cache",
+            "redirect",
+            "referrer",
+            "referrerPolicy",
+            "integrity",
+            "keepalive",
+            "signal",
+        ] as const) {
+            if (req[key] !== undefined) {
+                // @ts-expect-error — dynamic key
+                result[key] = req[key];
+            }
+        }
+
+        // Headers (merge case-insensitively)
+        if (req.headers) {
+            const h = new Headers(req.headers);
+            h.forEach((value, key) => {
+                headers.set(key, value);
+            });
+        }
+    }
+
+    if ([...headers.keys()].length > 0) {
+        result.headers = headers;
+    }
+
+    return result;
+}
+
+/**
+ * Merge multiple {@link ResponseInit} objects into one.
+ * - Later objects override earlier ones.
+ * - Headers are merged case-insensitively.
+ */
+export function mergeResponses(...responses: (ResponseInit | undefined)[]): ResponseInit {
+    const result: ResponseInit = {};
+    const headers = new Headers();
+
+    for (const res of responses) {
+        if (!res) continue;
+
+        // Status
+        if (res.status !== undefined) result.status = res.status;
+        if (res.statusText !== undefined) result.statusText = res.statusText;
+
+        // Headers (merge case-insensitively)
+        if (res.headers) {
+            const h = new Headers(res.headers);
+            h.forEach((value, key) => {
+                headers.set(key, value);
+            });
+        }
+    }
+
+    if ([...headers.keys()].length > 0) {
+        result.headers = headers;
+    }
+
+    return result;
+}
