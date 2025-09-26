@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { isRedirectError } from "next/dist/client/components/redirect.js";
+import { isRedirectError } from "next/dist/client/components/redirect-error.js";
 import { ErrorObject, SuccessObject } from "../types.js";
 
 type ServerAction = (...args: any) => Promise<any>;
