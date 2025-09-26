@@ -28,7 +28,7 @@ interface ProxyConfig {
     rewritePath?: (path: string) => string;
 }
 
-type Handler = (request: NextRequest, params: { params: { path: string[] } }) => Promise<Response>;
+type Handler = (request: NextRequest, params: { params: Promise<{ path: string[] }> }) => Promise<Response>;
 
 type ProxyHandlers = {
     GET: Handler;
@@ -47,9 +47,10 @@ type ProxyHandlers = {
  * @param config Configuration options.
  */
 export function createProxyHandlers(proxyUrl: string, config: ProxyConfig = {}): ProxyHandlers {
-    async function handleProxy(request: NextRequest, { params }: { params: { path: string[] } }) {
+    async function handleProxy(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+        const { path: pathParts } = await params;
         // Build target URL
-        let path = params.path.join("/");
+        let path = pathParts.join("/");
         if (config.rewritePath) {
             path = config.rewritePath(path);
         }

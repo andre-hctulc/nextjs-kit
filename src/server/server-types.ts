@@ -5,5 +5,5 @@ export interface CommonErrorBody {
 }
 
 export type RouteContext = {
-    params: Record<string, string>;
+    params: Promise<{ [K in string]?: string | string[] }>;
 };
