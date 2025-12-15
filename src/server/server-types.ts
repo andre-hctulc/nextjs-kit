@@ -1,6 +1,6 @@
 export interface CommonErrorBody {
     code: string | number;
-    details: any;
+    data: any;
     error: string;
 }
 

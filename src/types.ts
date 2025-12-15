@@ -13,7 +13,9 @@ export interface PageProps {
 export type LayoutProps = {
     children?: ReactNode;
     params: Promise<{ [key: string]: string }>;
-} & Partial<{ [slot: string]: ReactNode }>;
+};
+
+export type LayoutPropsWithSlots = LayoutProps & Partial<{ [slot: string]: ReactNode }>;
 
 export type ErrorObject = {
     error: unknown;
