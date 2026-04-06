@@ -10,6 +10,10 @@ export interface PageProps {
     searchParams: Promise<{ [key: string]: SearchParamValue }>;
 }
 
+export interface ErrorPageProps extends PageProps {
+    error: unknown;
+}
+
 export type LayoutProps = {
     children?: ReactNode;
     params: Promise<{ [key: string]: string }>;
