@@ -12,6 +12,7 @@
         "alwaysStrict": true,
         "skipLibCheck": true,
         "outDir": "dist",
+        "rootDir": "src",
         "declaration": true,
         "jsx": "react",
         "noImplicitOverride": true

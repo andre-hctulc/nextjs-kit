@@ -7,3 +7,5 @@ export interface CommonErrorBody {
 export type RouteContext = {
     params: Promise<{ [K in string]: string | string[] }>;
 };
+
+export type FormServerAction = (formData: FormData) => void;

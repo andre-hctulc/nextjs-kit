@@ -3,12 +3,12 @@ import { NextRequest, NextResponse } from "next/server.js";
 type EnhancedRequest = Request & { context?: any };
 
 type EnhanceRequest = (
-    request: NextRequest & { context?: any }
+    request: NextRequest & { context?: any },
 ) => EnhancedRequest | void | Promise<EnhancedRequest | void>;
 
 type EnhanceResponse = (
     response: NextResponse,
-    request: Request & { context?: any }
+    request: Request & { context?: any },
 ) => Response | void | Promise<Response | void>;
 
 interface ProxyConfig {
@@ -26,6 +26,7 @@ interface ProxyConfig {
     enhanceResponse?: EnhanceResponse;
     methods?: string[];
     rewritePath?: (path: string) => string;
+    fetch?: (request: Request) => Promise<Response>;
 }
 
 type Handler = (request: NextRequest, params: { params: Promise<{ path: string[] }> }) => Promise<Response>;
@@ -45,6 +46,13 @@ type ProxyHandlers = {
  *
  * @param proxyUrl The base URL of the upstream resource server.
  * @param config Configuration options.
+ * 
+ * @example
+ * const handlers = createReverseProxy();
+ * export const GET = handlers.GET;
+ * export const POST = handlers.POST;
+ * export const PUT = handlers.PUT;
+ * export const DELETE = handlers.DELETE;
  */
 export function createProxyHandlers(proxyUrl: string, config: ProxyConfig = {}): ProxyHandlers {
     async function handleProxy(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
@@ -79,7 +87,7 @@ export function createProxyHandlers(proxyUrl: string, config: ProxyConfig = {}):
         }
 
         // Proxy request
-        const res = await fetch(proxyRequest);
+        const res = await (config.fetch ? config.fetch(proxyRequest) : fetch(proxyRequest));
 
         let finalRes: Response = new NextResponse(res.body, { status: res.status, headers: res.headers });
 
