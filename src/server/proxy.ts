@@ -48,7 +48,7 @@ type ProxyHandlers = {
  * @param config Configuration options.
  * 
  * @example
- * const handlers = createReverseProxy();
+ * const handlers = createProxyHandlers();
  * export const GET = handlers.GET;
  * export const POST = handlers.POST;
  * export const PUT = handlers.PUT;
