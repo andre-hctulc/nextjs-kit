@@ -1,45 +1,33 @@
-import { ErrorObject } from "../types.js";
-
 export interface ServerErrorInfo {
     cause?: unknown;
-    /**
-     * @default 500
-     */
-    status?: number;
-    /**
-     * **⚠️** This message is sent to the client!
-     *
-     * If true, the message is interpreted as the user message.
-     * By default the user message is inferred from the status code.
-     */
-    userMessage?: string | true;
-    data?: any;
+    /** @default 500 */
+    httpStatusCode?: number;
+    /** Override the error message sent to the client */
+    userMessage?: string;
+    code?: string;
     /**
      * The URL to redirect to, when this error is thrown. Causes next's `redirect` to be called.
      */
     redirect?: string;
-    /**
-     * **⚠️** Details are are sent to the client!
-     * */
+    /** Error details */
     details?: Record<string, unknown>;
 }
 
 export class ServerError extends Error {
-    constructor(message: string, readonly info: ServerErrorInfo = {}) {
+    constructor(
+        message: string,
+        readonly info: ServerErrorInfo = {},
+    ) {
         // @ts-ignore
         super(message, { cause: info.cause });
     }
 
     getUserMessage(): string {
-        if (this.info.userMessage === true) return this.message;
-        return this.info.userMessage || getDefaultErrorMessage(this.getStatus());
+        return this.info.userMessage ?? this.message;
     }
 
-    /**
-     * The status code to be sent to the client. Defaults to 500.
-     */
-    getStatus(): number {
-        return this.info.status ?? 500;
+    getHttpStatusCode(): number {
+        return this.info.httpStatusCode ?? 500;
     }
 
     shouldRedirect(): boolean {
@@ -47,56 +35,14 @@ export class ServerError extends Error {
     }
 
     getDetails() {
-        return this.info.details || {};
+        return { httpStatusCode: this.getHttpStatusCode(), ...this.info.details };
     }
 
-    /**
-     * @returns The URL to redirect to, or an empty string if no redirect is specified.
-     */
     getRedirect(): string {
         return this.info.redirect || "";
     }
 
-    createBody(): ErrorObject {
-        return {
-            error: this,
-            success: false,
-            data: undefined,
-            details: this.getDetails(),
-            error_message: this.getUserMessage(),
-        };
-    }
-
-    static is(e: unknown, status?: number): e is ServerError {
-        return e instanceof ServerError && (status === undefined || e.getStatus() === status);
-    }
-}
-
-function getDefaultErrorMessage(status: number) {
-    switch (status) {
-        case 400:
-            return "Bad Request";
-        case 401:
-            return "Unauthorized";
-        case 403:
-            return "Forbidden";
-        case 404:
-            return "Not Found";
-        case 406:
-            return "Not Acceptable";
-        case 409:
-            return "Conflict";
-        case 422:
-            return "Unprocessable Entity";
-        case 429:
-            return "Too Many Requests";
-        case 451:
-            return "Unavailable For Legal Reasons";
-        case 500:
-            return "Internal Server Error";
-        case 501:
-            return "Not Implemented";
-        default:
-            return "Error";
+    getCode(): string {
+        return this.info.code || this.getHttpStatusCode().toString();
     }
 }

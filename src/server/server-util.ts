@@ -1,23 +1,22 @@
 import { NextRequest, NextResponse } from "next/server.js";
 import { ServerError } from "./server-error.js";
-import { ErrorObject, SuccessObject } from "../types.js";
+import { ErrorObject, ErrorPayload, SuccessObject } from "../types.js";
 import { isRedirectError } from "next/dist/client/components/redirect-error.js";
 
 /**
  * Parses the request body as JSON and throws a {@link ServerError} (406 Not Accepted) if the content type is not _application/json_.
  */
-export async function parseJSON<T = any>(request: NextRequest): Promise<T> {
+export async function parseJson<T = any>(request: NextRequest): Promise<T> {
     if (request.headers.get("Content-Type") !== "application/json") {
         throw new ServerError("Expected content type application/json", {
-            status: /* Not Accepted */ 406,
-            userMessage: true,
+            httpStatusCode: /* Not Accepted */ 406,
         });
     }
 
     try {
         return await request.json();
     } catch (err) {
-        throw new ServerError("Failed to decode JSON", { status: 400, cause: err });
+        throw new ServerError("Failed to decode JSON", { httpStatusCode: 400, cause: err });
     }
 }
 
@@ -27,139 +26,132 @@ export async function parseJSON<T = any>(request: NextRequest): Promise<T> {
 export async function parseFormData(request: NextRequest): Promise<FormData> {
     if (!request.headers.get("Content-Type")?.startsWith("multipart/form-data")) {
         throw new ServerError("Expected content type multipart/form-data", {
-            status: /* Not Accepted */ 406,
-            userMessage: true,
+            httpStatusCode: /* Not Accepted */ 406,
         });
     }
 
     try {
         return await request.formData();
     } catch (err) {
-        throw new ServerError("Failed to decode form data", { status: 400, cause: err });
+        throw new ServerError("Failed to decode form data", { httpStatusCode: 400, cause: err });
     }
 }
 
-export interface SendLikeOptions {
-    onError?: (error: unknown) => void;
-    /**
-     * Map non  {@link ServerError}s  to  {@link ServerError}s.
-     */
-    mapError?: (error: unknown) => ServerError | void | undefined | null;
-    /**
-     * @default "all"
-     */
-    errorLogs?: "all" | "disabled" | "5xx";
+export interface SendOptions {
+    data?: any;
+    errorBoundary?: (error: unknown, data: any) => Response | Promise<Response>;
 }
-
-const logError = (err: unknown) => {
-    if (err instanceof ServerError) {
-        const marker = `** Server Error (${err.getStatus()}) **\n`;
-        console.error(marker, err);
-    } else {
-        const marker = "** ? Error **\n";
-        console.error(marker, err);
-    }
-};
 
 /**
- * **Route Handler**
- *
- * Catches  {@link ServerError}s and sends them as JSON responses with the appropriate status code.
- * Non  {@link ServerError}s are sent as a generic 500 error.
- *
- * Do **not** use this in middleware
+ * Sends a response and handles errors.
+ * {@link ServerError}s are handled and converted to a JSON response with the error message and details,
+ * unless a custom error boundary is provided in the options.
  */
 export async function send(
-    sender: Response | Promise<Response> | (() => Response | Promise<Response>),
-    options: SendLikeOptions = {}
+    fn: Response | Promise<Response> | (() => Response | Promise<Response>),
+    options: SendOptions = {},
 ): Promise<Response> {
     try {
-        if (typeof sender === "function") sender = sender();
-        return await sender;
+        if (typeof fn === "function") fn = fn();
+        return await fn;
     } catch (err) {
         // Throw next redirect errors. These errors are thrown by the next redirect function and should not be caught here
         if (isRedirectError(err)) throw err;
 
-        if (options.mapError && !(err instanceof ServerError)) {
-            const mappedErr = options.mapError(err);
-            if (mappedErr) err = mappedErr;
+        if (options.errorBoundary) {
+            return options.errorBoundary(err, options.data);
         }
 
-        if (options.onError) options.onError(err);
-
-        const logAll = !options.errorLogs || options.errorLogs === "all";
-
         if (err instanceof ServerError) {
-            const status = err.getStatus();
-
-            // Log server errors
-            if (logAll || (options.errorLogs === "5xx" && status >= 500)) {
-                logError(err);
-            }
+            const status = err.getHttpStatusCode();
 
             if (err.shouldRedirect()) {
                 return NextResponse.redirect(err.getRedirect());
             }
 
-            return new Response(JSON.stringify(err.createBody()), {
-                status,
-                headers: { "Content-Type": "application/json" },
-            });
+            return new Response(
+                JSON.stringify({
+                    error: {
+                        message: err.getUserMessage(),
+                        details: err.getDetails(),
+                        code: err.getCode(),
+                    } satisfies ErrorPayload,
+                }),
+                {
+                    status,
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
         } else {
-            // Log unknown errors
-            if (logAll) {
-                logError(err);
-            }
+            return new Response(
+                JSON.stringify({
+                    error: {
+                        message: "Internal Server Error",
+                        details: {},
+                        code: "INTERNAL_SERVER_ERROR",
+                    } satisfies ErrorPayload,
+                }),
+                {
+                    status: 500,
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
         }
-
-        return new Response(
-            JSON.stringify({
-                error_message: "Internal Server Error",
-                error: true,
-                status: 500,
-                details: {},
-                success: false,
-                data: undefined,
-            } satisfies ErrorObject),
-            {
-                status: 500,
-                headers: { "Content-Type": "application/json" },
-            }
-        );
     }
 }
 
+export interface ActOptions<T = any> {
+    data?: any;
+    errorBoundary?: (error: unknown, data: any) => T | Promise<Awaited<T>>;
+}
+
 /**
- * **Action**
- *
- * Catches  {@link ServerError}s and sends them as JSON responses with the appropriate status code.
- * Non  {@link ServerError}s are sent as a generic 500 error.
- *
- * @returns The result of the action or an error object. Check if the result is an error object with {@link isErrorObject}
+ * Run an action.
+ * An error boundary can be provided to handle errors gracefully.
  */
 export async function act<T>(
     action: Promise<T> | (() => T | Promise<T>),
-    options: SendLikeOptions = {}
-): Promise<SuccessObject<T> | ErrorObject> {
+    options: ActOptions<T> = {},
+): Promise<T> {
     try {
         let result: any;
-        if (typeof action === "function") result = await action();
-        else result = await action;
-        return { success: true, data: result, error: null };
+        if (typeof action === "function") {
+            result = await action();
+        } else {
+            result = await action;
+        }
+        return result;
     } catch (err) {
         // Throw next redirect errors. These errors are thrown by the next redirect function and should not be caught here
         if (isRedirectError(err)) throw err;
 
-        if (options.mapError) {
-            const mappedErr = options.mapError(err);
-            if (mappedErr) err = mappedErr;
+        if (options.errorBoundary) {
+            return options.errorBoundary(err, options.data) as any;
         }
 
-        if (options.onError) options.onError(err);
-        if (options.errorLogs !== "disabled") logError(err);
+        throw err;
+    }
+}
 
-        // Unknown error
-        return { error: err, data: undefined, success: false };
+/**
+ * Run an action with error handling.
+ */
+export async function actSafely<T>(
+    action: Promise<T> | (() => T | Promise<T>),
+): Promise<SuccessObject<T> | ErrorObject> {
+    try {
+        let result: any;
+        if (typeof action === "function") {
+            result = await action();
+        } else {
+            result = await action;
+        }
+        return { data: result, error: undefined, success: true } satisfies SuccessObject<T>;
+    } catch (error) {
+        // Throw next redirect errors. These errors are thrown by the next redirect function and should not be caught here
+        if (isRedirectError(error)) throw error;
+
+        return { data: undefined, error, success: false } satisfies ErrorObject;
     }
 }
 

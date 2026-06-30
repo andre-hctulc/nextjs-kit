@@ -21,17 +21,21 @@ export type LayoutProps = {
 
 export type LayoutPropsWithSlots = LayoutProps & Partial<{ [slot: string]: ReactNode }>;
 
-export type ErrorObject = {
-    error: unknown;
-    success: false;
-    data: undefined;
-    details?: Record<string, any>;
-    error_message?: string;
+export type ErrorPayload = {
+    message: string;
+    details?: any;
+    code?: string;
     [key: string]: unknown;
 };
 
-export type SuccessObject<T> = {
-    error: null;
+export type ErrorObject<E = unknown> = {
+    error: E;
+    success: false;
+    data: undefined;
+};
+
+export type SuccessObject<T = unknown> = {
+    error: undefined;
     success: true;
     data: T;
 };

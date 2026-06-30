@@ -1,4 +1,4 @@
-import { ErrorObject, SuccessObject } from "./types.js";
+import { ErrorPayload, SuccessObject } from "./types.js";
 
 export function paramValue<T>(value: T | T[] | undefined): T | undefined {
     if (Array.isArray(value)) {
@@ -18,7 +18,7 @@ export function paramValues<T>(value: T | T[] | undefined): T[] {
     }
 }
 
-export function isErrorObject(obj: any): obj is ErrorObject {
+export function isErrorObject(obj: any): obj is ErrorPayload {
     return (
         obj && typeof obj.error === "string" && typeof obj.status === "number" && obj.__isErrorObj === true
     );

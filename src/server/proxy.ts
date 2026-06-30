@@ -46,13 +46,10 @@ type ProxyHandlers = {
  *
  * @param proxyUrl The base URL of the upstream resource server.
  * @param config Configuration options.
- * 
+ *
  * @example
- * const handlers = createProxyHandlers();
- * export const GET = handlers.GET;
- * export const POST = handlers.POST;
- * export const PUT = handlers.PUT;
- * export const DELETE = handlers.DELETE;
+ * const handlers = createProxyHandlers("https://api.example.com", {...});
+ * export const { GET, POST, PUT, DELETE } = handlers;
  */
 export function createProxyHandlers(proxyUrl: string, config: ProxyConfig = {}): ProxyHandlers {
     async function handleProxy(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {

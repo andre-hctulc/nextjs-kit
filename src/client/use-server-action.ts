@@ -21,7 +21,7 @@ export type UserServerActionResult<S extends ServerAction> = {
 
 export type UseServerActionOptions<T, E = unknown> = {
     onSuccess?: (data: T) => void;
-    onError?: (errorObject: ErrorObject | null, error: unknown) => void;
+    onError?: (errorObject: ErrorObject<E> | null, error: unknown) => void;
 };
 
 /**
@@ -29,7 +29,7 @@ export type UseServerActionOptions<T, E = unknown> = {
  */
 export function useServerAction<S extends ServerAction>(
     action: S,
-    options?: UseServerActionOptions<ServerActionResult<S>>
+    options?: UseServerActionOptions<ServerActionResult<S>>,
 ): UserServerActionResult<S> {
     const [isPending, setIsPending] = useState(false);
     const [data, setData] = useState<ServerActionResult<S> | undefined>(undefined);
@@ -75,7 +75,7 @@ export function useServerAction<S extends ServerAction>(
                 return {
                     success: true,
                     data: result,
-                    error: null,
+                    error: undefined,
                 };
             } catch (err) {
                 if (isRedirectError(err)) {
@@ -89,7 +89,7 @@ export function useServerAction<S extends ServerAction>(
                 }
 
                 if (options?.onError) options.onError((err as any)?.__errorObject || null, err);
-                
+
                 return {
                     success: false,
                     error: err,
@@ -98,7 +98,7 @@ export function useServerAction<S extends ServerAction>(
             } finally {
             }
         },
-        []
+        [],
     );
 
     return { isPending, action: act, error, errorObject, data, isSuccess };
