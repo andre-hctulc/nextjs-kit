@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server.js";
 import { ServerError } from "./server-error.js";
-import { ErrorObject, ErrorPayload, SuccessObject } from "../types.js";
+import { ErrorPayload } from "../types.js";
 import { isRedirectError } from "next/dist/client/components/redirect-error.js";
 
 /**
@@ -37,9 +37,23 @@ export async function parseFormData(request: NextRequest): Promise<FormData> {
     }
 }
 
+export type ErrorBoundary<E = unknown, R = any> = (error: E, data: any) => R | Promise<R>;
+
+export function createErrorBoundary(...boundaries: ErrorBoundary[]): ErrorBoundary {
+    return async (err: unknown, data: any) => {
+        for (const boundary of boundaries) {
+            const result = await boundary(err, data);
+            if (result !== undefined) {
+                return result;
+            }
+        }
+        throw err;
+    };
+}
+
 export interface SendOptions {
     data?: any;
-    errorBoundary?: (error: unknown, data: any) => Response | Promise<Response>;
+    errorBoundary?: ErrorBoundary<unknown, Response>;
 }
 
 /**
@@ -102,7 +116,7 @@ export async function send(
 
 export interface ActOptions<T = any> {
     data?: any;
-    errorBoundary?: (error: unknown, data: any) => T | Promise<Awaited<T>>;
+    errorBoundary?: ErrorBoundary<unknown, T>;
 }
 
 /**
