@@ -39,8 +39,10 @@ export async function parseFormData(request: NextRequest): Promise<FormData> {
 
 export type ErrorBoundary<E = unknown, R = any> = (error: E, data: any) => R | Promise<R>;
 
-export function createErrorBoundary(...boundaries: ErrorBoundary[]): ErrorBoundary {
-    return async (err: unknown, data: any) => {
+export function combineErrorBoundaries<E = unknown, R = any>(
+    ...boundaries: ErrorBoundary<E, R | undefined>[]
+): ErrorBoundary<E, R> {
+    return async (err: E, data: any) => {
         for (const boundary of boundaries) {
             const result = await boundary(err, data);
             if (result !== undefined) {
