@@ -21,3 +21,5 @@ export function normalizeSearch(searchInput: SearchInput): URLSearchParams {
     }
     return new URLSearchParams();
 }
+
+export type MaybePromise<T> = T | Promise<T>;
