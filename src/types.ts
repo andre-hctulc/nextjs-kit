@@ -39,3 +39,12 @@ export type SuccessObject<T = unknown> = {
     success: true;
     data: T;
 };
+
+export interface ActionState<T = unknown> {
+    errorMessage?: string;
+    successMessage?: string;
+    success?: boolean;
+    errorCode?: string;
+    details?: Record<string, unknown>;
+    data?: T;
+}
