@@ -48,3 +48,8 @@ export interface ActionState<T = unknown> {
     details?: Record<string, unknown>;
     data?: T;
 }
+
+export type FormAction<T = unknown> = (
+    prevState: ActionState<T> | undefined,
+    formData: FormData,
+) => Promise<ActionState<T>>;
