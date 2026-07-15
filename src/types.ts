@@ -53,3 +53,5 @@ export type FormAction<T = unknown> = (
     prevState: ActionState<T> | undefined,
     formData: FormData,
 ) => Promise<ActionState<T>>;
+
+export type DataParser<T> = { parse: (formData: Record<string, unknown>) => T };

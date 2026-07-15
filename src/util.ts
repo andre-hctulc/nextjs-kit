@@ -1,4 +1,5 @@
-import { ErrorObject, ErrorPayload, SuccessObject } from "./types.js";
+import { ErrorObject, ErrorPayload, DataParser, SuccessObject } from "./types.js";
+import { getProperty, setProperty } from "dot-prop";
 
 export function paramValue<T>(value: T | T[] | undefined): T | undefined {
     if (Array.isArray(value)) {
@@ -26,4 +27,18 @@ export function isErrorObject(obj: any): obj is ErrorPayload {
 
 export function isSuccessObject<T>(obj: T): obj is Exclude<T, SuccessObject<T>> {
     return !isErrorObject(obj);
+}
+
+export function parseFormData<T extends object = Record<string, any>>(
+    fd: FormData,
+    parser?: DataParser<T>,
+): T {
+    const obj: Record<string, any> = {};
+    for (const [key, value] of fd.entries()) {
+        setProperty(obj, key, value);
+    }
+    if (parser) {
+        return parser.parse(obj);
+    }
+    return obj as T;
 }

@@ -26,5 +26,8 @@
         "@types/node": "^22.7.4",
         "@types/react": "^18.3.11",
         "next": "^15.5.4"
+    },
+    "dependencies": {
+        "dot-prop": "^10.1.0"
     }
 }
