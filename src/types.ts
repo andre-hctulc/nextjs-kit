@@ -50,7 +50,7 @@ export interface ActionState<T = unknown> {
 }
 
 export type FormAction<T = unknown> = (
-    prevState: ActionState<T> | undefined,
+    prevState: ActionState<T>,
     formData: FormData,
 ) => Promise<ActionState<T>>;
 

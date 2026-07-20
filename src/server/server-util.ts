@@ -20,23 +20,6 @@ export async function parseJson<T = any>(request: NextRequest): Promise<T> {
     }
 }
 
-/**
- * Parses the request body as form data and throws a  {@link ServerError} (406 Not Accepted) if the content type is not _multipart/form-data_.
- */
-export async function parseFormData(request: NextRequest): Promise<FormData> {
-    if (!request.headers.get("Content-Type")?.startsWith("multipart/form-data")) {
-        throw new ServerError("Expected content type multipart/form-data", {
-            httpStatusCode: /* Not Accepted */ 406,
-        });
-    }
-
-    try {
-        return await request.formData();
-    } catch (err) {
-        throw new ServerError("Failed to decode form data", { httpStatusCode: 400, cause: err });
-    }
-}
-
 export type ErrorBoundary<E = unknown, R = any> = (error: E, data: any) => R | Promise<R>;
 
 export function combineErrorBoundaries<E = unknown, R = any>(
