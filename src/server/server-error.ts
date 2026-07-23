@@ -1,10 +1,10 @@
-export interface ServerErrorInfo {
+export interface ServerErrorOptions {
     cause?: unknown;
     /** @default 500 */
-    httpStatusCode?: number;
+    statusCode?: number;
     /** Override the error message sent to the client */
     userMessage?: string;
-    code?: string;
+    errorCode?: string;
     /**
      * The URL to redirect to, when this error is thrown. Causes next's `redirect` to be called.
      */
@@ -14,35 +14,30 @@ export interface ServerErrorInfo {
 }
 
 export class ServerError extends Error {
-    constructor(
-        message: string,
-        readonly info: ServerErrorInfo = {},
-    ) {
+    #options: ServerErrorOptions;
+
+    readonly details: Record<string, unknown>;
+    readonly errorCode: string;
+    readonly statusCode: number;
+
+    constructor(message: string, options: ServerErrorOptions = {}) {
         // @ts-ignore
-        super(message, { cause: info.cause });
+        super(message, { cause: options.cause });
+        this.#options = options;
+        this.details = options.details ?? {};
+        this.errorCode = options.errorCode ?? "INTERNAL_SERVER_ERROR";
+        this.statusCode = options.statusCode ?? 500;
     }
 
     getUserMessage(): string {
-        return this.info.userMessage ?? this.message;
-    }
-
-    getHttpStatusCode(): number {
-        return this.info.httpStatusCode ?? 500;
+        return this.#options.userMessage ?? this.message;
     }
 
     shouldRedirect(): boolean {
-        return !!this.info.redirect;
-    }
-
-    getDetails() {
-        return { httpStatusCode: this.getHttpStatusCode(), ...this.info.details };
+        return !!this.#options.redirect;
     }
 
     getRedirect(): string {
-        return this.info.redirect || "";
-    }
-
-    getCode(): string {
-        return this.info.code || this.getHttpStatusCode().toString();
+        return this.#options.redirect || "";
     }
 }

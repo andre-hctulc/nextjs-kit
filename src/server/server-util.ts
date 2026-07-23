@@ -9,14 +9,14 @@ import { isRedirectError } from "next/dist/client/components/redirect-error.js";
 export async function parseJson<T = any>(request: NextRequest): Promise<T> {
     if (request.headers.get("Content-Type") !== "application/json") {
         throw new ServerError("Expected content type application/json", {
-            httpStatusCode: /* Not Accepted */ 406,
+            statusCode: /* Not Accepted */ 406,
         });
     }
 
     try {
         return await request.json();
     } catch (err) {
-        throw new ServerError("Failed to decode JSON", { httpStatusCode: 400, cause: err });
+        throw new ServerError("Failed to decode JSON", { statusCode: 400, cause: err });
     }
 }
 
@@ -44,6 +44,47 @@ export interface SendOptions {
     errorBoundary?: ErrorBoundary<unknown, Response>;
 }
 
+function createSendErrorBoundary(): ErrorBoundary<unknown, Response> {
+    return (err) => {
+        if (err instanceof ServerError) {
+            const status = err.statusCode;
+
+            if (err.shouldRedirect()) {
+                return NextResponse.redirect(err.getRedirect());
+            }
+
+            return new Response(
+                JSON.stringify({
+                    error: {
+                        message: err.getUserMessage(),
+                        errorCode: err.errorCode,
+                        statusCode: err.statusCode,
+                        details: err.details,
+                    } satisfies ErrorPayload,
+                }),
+                {
+                    status,
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
+        } else {
+            return new Response(
+                JSON.stringify({
+                    error: {
+                        message: "Internal Server Error",
+                        errorCode: "INTERNAL_SERVER_ERROR",
+                        details: {},
+                    } satisfies ErrorPayload,
+                }),
+                {
+                    status: 500,
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
+        }
+    };
+}
+
 /**
  * Sends a response and handles errors.
  * {@link ServerError}s are handled and converted to a JSON response with the error message and details,
@@ -57,48 +98,15 @@ export async function send(
         if (typeof fn === "function") fn = fn();
         return await fn;
     } catch (err) {
-        // Throw next redirect errors. These errors are thrown by the next redirect function and should not be caught here
+        // Throw next redirect errors
         if (isRedirectError(err)) throw err;
 
         if (options.errorBoundary) {
             return options.errorBoundary(err, options.data);
         }
 
-        if (err instanceof ServerError) {
-            const status = err.getHttpStatusCode();
-
-            if (err.shouldRedirect()) {
-                return NextResponse.redirect(err.getRedirect());
-            }
-
-            return new Response(
-                JSON.stringify({
-                    error: {
-                        message: err.getUserMessage(),
-                        details: err.getDetails(),
-                        code: err.getCode(),
-                    } satisfies ErrorPayload,
-                }),
-                {
-                    status,
-                    headers: { "Content-Type": "application/json" },
-                },
-            );
-        } else {
-            return new Response(
-                JSON.stringify({
-                    error: {
-                        message: "Internal Server Error",
-                        details: {},
-                        code: "INTERNAL_SERVER_ERROR",
-                    } satisfies ErrorPayload,
-                }),
-                {
-                    status: 500,
-                    headers: { "Content-Type": "application/json" },
-                },
-            );
-        }
+        const sendErrorBoundary = createSendErrorBoundary();
+        return sendErrorBoundary(err, options.data);
     }
 }
 
@@ -124,7 +132,7 @@ export async function act<T>(
         }
         return result;
     } catch (err) {
-        // Throw next redirect errors. These errors are thrown by the next redirect function and should not be caught here
+        // Throw next redirect errors
         if (isRedirectError(err)) throw err;
 
         if (options.errorBoundary) {
