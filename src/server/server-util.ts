@@ -4,12 +4,13 @@ import { ErrorPayload } from "../types.js";
 import { isRedirectError } from "next/dist/client/components/redirect-error.js";
 
 /**
- * Parses the request body as JSON and throws a {@link ServerError} (406 Not Accepted) if the content type is not _application/json_.
+ * Parses the request body as JSON and throws a {@link ServerError} (406 Not Acceptable) if the content type is not _application/json_.
  */
 export async function parseJson<T = any>(request: NextRequest): Promise<T> {
     if (request.headers.get("Content-Type") !== "application/json") {
         throw new ServerError("Expected content type application/json", {
-            statusCode: /* Not Accepted */ 406,
+            errorCode: "EXPECTED_JSON",
+            statusCode: 406, // Not Acceptable
         });
     }
 

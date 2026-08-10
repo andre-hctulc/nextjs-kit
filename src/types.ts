@@ -49,9 +49,11 @@ export interface ActionState<T = unknown> {
     data?: T;
 }
 
-export type FormAction<T = unknown> = (
+export type ServerAction<T = unknown, D = unknown> = (
     prevState: ActionState<T>,
-    formData: FormData,
+    formData: D,
 ) => Promise<ActionState<T>>;
+
+export type FormAction<T = unknown> = ServerAction<T, FormData>;
 
 export type DataParser<T> = { parse: (formData: Record<string, unknown>) => T };
