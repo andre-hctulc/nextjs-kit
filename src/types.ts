@@ -49,11 +49,11 @@ export interface ActionState<T = unknown> {
     data?: T;
 }
 
-export type ServerAction<TData = unknown, TInput = unknown> = (
+export type ServerAction<TInput = unknown, TData = unknown> = (
     prevState: ActionState<TData>,
     input: TInput,
 ) => Promise<ActionState<TData>>;
 
-export type FormAction<TData = unknown> = ServerAction<TData, FormData>;
+export type FormAction<TData = unknown> = ServerAction<FormData, TData>;
 
 export type DataParser<T> = { parse: (formData: Record<string, unknown>) => T };
