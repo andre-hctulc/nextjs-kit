@@ -1,4 +1,4 @@
-import { ErrorObject, ErrorPayload, DataParser, SuccessObject } from "./types.js";
+import { ErrorPayload, DataParser, SuccessObject } from "./types.js";
 import { getProperty, setProperty } from "dot-prop";
 
 export function paramValue<T>(value: T | T[] | undefined): T | undefined {
@@ -29,13 +29,31 @@ export function isSuccessObject<T>(obj: T): obj is Exclude<T, SuccessObject<T>> 
     return !isErrorObject(obj);
 }
 
+interface ParseFormDataOptions<T extends object> {
+    parser?: DataParser<T>;
+    /**
+     * If true, duplicate keys in the FormData will be stacked into an array. If false, the last value will overwrite previous values.
+     * @default true
+     */
+    groupDuplicateKeys?: boolean;
+}
+
 export function parseFormData<T extends object = Record<string, any>>(
     fd: FormData,
-    parser?: DataParser<T>,
+    { parser, groupDuplicateKeys }: ParseFormDataOptions<T> = {},
 ): T {
     const obj: Record<string, any> = {};
     for (const [key, value] of fd.entries()) {
-        setProperty(obj, key, value);
+        const currentValue: unknown = getProperty(obj, key);
+        if (groupDuplicateKeys !== false && currentValue !== undefined) {
+            if (Array.isArray(currentValue)) {
+                currentValue.push(value);
+            } else {
+                setProperty(obj, key, [currentValue, value]);
+            }
+        } else {
+            setProperty(obj, key, value);
+        }
     }
     if (parser) {
         return parser.parse(obj);
