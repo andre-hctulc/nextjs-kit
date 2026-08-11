@@ -39,11 +39,12 @@ interface ParseFormDataOptions<T extends object> {
 }
 
 export function parseFormData<T extends object = Record<string, any>>(
-    fd: FormData,
+    fd: FormData | object,
     { parser, groupDuplicateKeys }: ParseFormDataOptions<T> = {},
 ): T {
     const obj: Record<string, any> = {};
-    for (const [key, value] of fd.entries()) {
+    const entries = fd instanceof FormData ? fd.entries() : Object.entries(fd);
+    for (const [key, value] of entries) {
         const currentValue: unknown = getProperty(obj, key);
         if (groupDuplicateKeys !== false && currentValue !== undefined) {
             if (Array.isArray(currentValue)) {
