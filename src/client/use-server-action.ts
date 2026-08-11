@@ -5,7 +5,7 @@ import { isRedirectError } from "next/dist/client/components/redirect-error.js";
 import { ErrorObject, SuccessObject } from "../types.js";
 
 type ServerAction = (...args: any) => Promise<any>;
-type ServerActionResult<T> = T extends ServerAction ? ReturnType<T> : never;
+type ServerActionResult<T> = T extends ServerAction ? Awaited<ReturnType<T>> : never;
 type ServerActionParameters<T> = T extends (...args: infer P) => any ? P : never;
 
 export type UserServerActionResult<S extends ServerAction> = {
