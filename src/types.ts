@@ -59,7 +59,7 @@ export type ServerActionWithPayload<TState = unknown, TInput = unknown> = (
     input: TInput,
 ) => TState | Promise<TState>;
 
-export type FormAction<TState = unknown> = ServerActionWithPayload<FormData, TState>;
+export type FormAction<TState = unknown> = ServerActionWithPayload<TState, FormData>;
 
 // #### Data Parser ####
 
