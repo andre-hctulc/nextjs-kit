@@ -40,6 +40,7 @@ export type SuccessObject<T = unknown> = {
     data: T;
 };
 
+// #### Action State ####
 export interface ActionState<T = unknown> {
     errorMessage?: string;
     successMessage?: string;
@@ -49,13 +50,17 @@ export interface ActionState<T = unknown> {
     data?: T;
 }
 
-export type ServerAction<TInput = unknown, TData = unknown> = (
-    prevState: ActionState<TData>,
+// #### Actions ####
+
+export type ServerAction<S> = (prevState: S) => S | Promise<S>;
+
+export type ServerActionWithPayload<TState = unknown, TInput = unknown> = (
+    prevState: TState,
     input: TInput,
-) => Promise<ActionState<TData>>;
+) => TState | Promise<TState>;
 
-export type FormAction<TData = unknown> = ServerAction<FormData, TData>;
+export type FormAction<TState = unknown> = ServerActionWithPayload<FormData, TState>;
 
-export type StateAction<S> = (prevState: S) => S | Promise<S>;
+// #### Data Parser ####
 
 export type DataParser<T> = { parse: (formData: Record<string, unknown>) => T };
