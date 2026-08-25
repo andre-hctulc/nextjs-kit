@@ -8,3 +8,5 @@ src
 index.ts
 docs
 scripts
+pnpm-lock.yaml
+pnpm-workspace.yaml
