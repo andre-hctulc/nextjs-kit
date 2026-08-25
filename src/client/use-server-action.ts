@@ -8,7 +8,7 @@ type ServerAction = (...args: any) => any;
 type ServerActionResult<T> = T extends ServerAction ? Awaited<ReturnType<T>> : never;
 type ServerActionParameters<T> = T extends (...args: infer P) => any ? P : never;
 
-export type UserServerActionResult<S extends ServerAction> = {
+export type UserServerActionResult<S extends ServerAction = ServerAction> = {
     data: ServerActionResult<S> | undefined;
     error: unknown | null;
     isPending: boolean;
@@ -19,7 +19,7 @@ export type UserServerActionResult<S extends ServerAction> = {
     isSuccess: boolean;
 };
 
-export type UseServerActionOptions<T, E = unknown> = {
+export type UseServerActionOptions<T = unknown> = {
     onSuccess?: (data: T) => void;
     onError?: (error: unknown) => void;
 };
