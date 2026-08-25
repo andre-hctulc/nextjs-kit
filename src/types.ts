@@ -52,7 +52,7 @@ export interface ActionState<T = unknown> {
 
 // #### Actions ####
 
-export type ServerAction<S> = (prevState: S) => S | Promise<S>;
+export type ServerAction<TState = unknown> = (prevState: TState) => TState | Promise<TState>;
 
 export type ServerActionWithPayload<TState = unknown, TInput = unknown> = (
     prevState: TState,
