@@ -56,4 +56,6 @@ export type ServerAction<TInput = unknown, TData = unknown> = (
 
 export type FormAction<TData = unknown> = ServerAction<FormData, TData>;
 
+export type StateAction<S> = (prevState: S) => S | Promise<S>;
+
 export type DataParser<T> = { parse: (formData: Record<string, unknown>) => T };

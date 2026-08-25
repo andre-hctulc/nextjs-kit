@@ -1,6 +1,7 @@
 {
     "name": "@dre44/nextjs-kit",
     "version": "0.28.0",
+    "packageManager": "pnpm@11.13.1",
     "description": "Some Next.JS utility",
     "main": "dist/index.js",
     "type": "module",
