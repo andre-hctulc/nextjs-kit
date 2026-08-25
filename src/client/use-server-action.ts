@@ -21,7 +21,7 @@ export type UserServerActionResult<S extends ServerAction> = {
 
 export type UseServerActionOptions<T, E = unknown> = {
     onSuccess?: (data: T) => void;
-    onError?: (errorObject: ErrorObject<E> | null, error: unknown) => void;
+    onError?: (error: unknown) => void;
 };
 
 /**
@@ -38,10 +38,20 @@ export function useServerAction<S extends ServerAction>(
     const [errorObject, setErrorObject] = useState<ErrorObject | null>(null);
     const abortController = useRef<AbortController | null>(null);
     const a = useRef(action);
+    const onSuccess = useRef(options?.onSuccess);
+    const onError = useRef(options?.onError);
 
     useEffect(() => {
         a.current = action;
     }, [action]);
+
+    useEffect(() => {
+        onSuccess.current = options?.onSuccess;
+    }, [options?.onSuccess]);
+
+    useEffect(() => {
+        onError.current = options?.onError;
+    }, [options?.onError]);
 
     const act = useCallback(
         async (...args: Parameters<S>): Promise<SuccessObject<ServerActionResult<S>> | ErrorObject> => {
@@ -60,8 +70,8 @@ export function useServerAction<S extends ServerAction>(
             try {
                 const result = await a.current(...args);
 
-                if (options?.onSuccess) {
-                    options.onSuccess(result);
+                if (onSuccess.current) {
+                    onSuccess.current(result);
                 }
 
                 if (!currentAbortController.signal.aborted) {
@@ -88,7 +98,9 @@ export function useServerAction<S extends ServerAction>(
                     setIsPending(false);
                 }
 
-                if (options?.onError) options.onError((err as any)?.__errorObject || null, err);
+                if (onError.current) {
+                    onError.current(err);
+                }
 
                 return {
                     success: false,
