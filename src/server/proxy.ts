@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server.js";
+import { ErrorBoundary } from "./server-util.js";
+import { isRedirectError } from "next/dist/client/components/redirect-error.js";
 
-type RequestWithContext = Request & { context?: any };
-
-type EnhanceRequest = (
-    request: RequestWithContext,
-) => RequestWithContext | void | Promise<RequestWithContext | void>;
+type EnhanceRequest = (request: Request) => Request | void | Promise<Request | void>;
 
 type EnhanceResponse = (
     response: NextResponse,
-    request: RequestWithContext,
+    request: Request,
 ) => NextResponse | void | Promise<NextResponse | void>;
 
 interface ProxyConfig {
@@ -40,6 +38,7 @@ interface ProxyConfig {
     rewritePath?: (path: string) => string;
     rewriteUrl?: (url: string) => string;
     fetch?: (request: Request) => Promise<Response>;
+    errorBoundary?: ErrorBoundary<unknown, Response>;
 }
 
 type HandlerParams = {
@@ -84,66 +83,80 @@ export function createProxyHandlers(
         fetch: customFetch,
         requestInit,
         responseInit,
+        errorBoundary,
     }: ProxyConfig = {},
 ): ProxyHandlers {
-    async function handleProxy(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
-        const { path: pathParts } = await params;
+    async function handle(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+        try {
+            const { path: pathParts } = await params;
 
-        let baseUrl = typeof proxyUrl === "string" ? proxyUrl : await proxyUrl(request, { params });
-        if (baseUrl.endsWith("/") && baseUrl.length > 1) {
-            baseUrl = baseUrl.slice(0, -1);
-        }
-
-        let proxyPath = pathParts.join("/");
-        if (rewritePath) {
-            proxyPath = rewritePath(proxyPath);
-        }
-        if (!proxyPath.startsWith("/")) {
-            proxyPath = `/${proxyPath}`;
-        }
-
-        let url = `${baseUrl}${proxyPath}${request.nextUrl.search}`;
-        if (rewriteUrl) {
-            url = rewriteUrl(url);
-        }
-
-        // Copy request headers except hop-by-hop ones
-        const headers: HeadersInit = {};
-        request.headers.forEach((value, key) => {
-            if (!["host", "connection"].includes(key.toLowerCase())) {
-                headers[key] = value;
+            let baseUrl = typeof proxyUrl === "string" ? proxyUrl : await proxyUrl(request, { params });
+            if (baseUrl.endsWith("/") && baseUrl.length > 1) {
+                baseUrl = baseUrl.slice(0, -1);
             }
-        });
 
-        // Base init
-        let proxyRequest: RequestWithContext = new Request(new URL(url), {
-            method: request.method,
-            headers,
-            body: request.body,
-            ...requestInit,
-        });
+            let proxyPath = pathParts.join("/");
+            if (rewritePath) {
+                proxyPath = rewritePath(proxyPath);
+            }
+            if (!proxyPath.startsWith("/")) {
+                proxyPath = `/${proxyPath}`;
+            }
 
-        const enhancedReq = await enhanceRequest?.(proxyRequest);
-        if (enhancedReq) {
-            proxyRequest = enhancedReq;
+            let url = `${baseUrl}${proxyPath}${request.nextUrl.search}`;
+            if (rewriteUrl) {
+                url = rewriteUrl(url);
+            }
+
+            // Copy request headers except hop-by-hop ones
+            const headers: HeadersInit = {};
+            request.headers.forEach((value, key) => {
+                if (!["host", "connection"].includes(key.toLowerCase())) {
+                    headers[key] = value;
+                }
+            });
+
+            // Base init
+            let proxyRequest: Request = new Request(new URL(url), {
+                method: request.method,
+                headers,
+                body: request.body,
+                ...requestInit,
+            });
+
+            const enhancedReq = await enhanceRequest?.(proxyRequest);
+            if (enhancedReq) {
+                proxyRequest = enhancedReq;
+            }
+
+            // Proxy request
+            const res: Response = await (customFetch ? customFetch(proxyRequest) : fetch(proxyRequest));
+
+            let finalRes = new NextResponse(res.body, {
+                status: res.status,
+                headers: res.headers,
+                ...responseInit,
+            });
+
+            // enhance response
+            const enhancedRes = await enhanceResponse?.(finalRes, proxyRequest);
+            if (enhancedRes) {
+                finalRes = enhancedRes;
+            }
+
+            return finalRes;
+        } catch (err) {
+            if (isRedirectError(err)) {
+                throw err;
+            }
+            if (errorBoundary) {
+                const res = await errorBoundary(err, request);
+                if (res) {
+                    return res;
+                }
+            }
+            throw err;
         }
-
-        // Proxy request
-        const res: Response = await (customFetch ? customFetch(proxyRequest) : fetch(proxyRequest));
-
-        let finalRes = new NextResponse(res.body, {
-            status: res.status,
-            headers: res.headers,
-            ...responseInit,
-        });
-
-        // enhance response
-        const enhancedRes = await enhanceResponse?.(finalRes, proxyRequest);
-        if (enhancedRes) {
-            finalRes = enhancedRes;
-        }
-
-        return finalRes;
     }
 
     const handlers: ProxyHandlers = {} as ProxyHandlers;
@@ -151,10 +164,9 @@ export function createProxyHandlers(
 
     for (const method of httpMethods) {
         if (!handlers[method]) {
-            handlers[method] = handleProxy;
+            handlers[method] = handle;
         }
     }
-
     return handlers;
 }
 
