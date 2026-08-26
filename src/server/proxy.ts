@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server.js";
 
-type EnhancedRequest = Request & { context?: any };
+type RequestWithContext = Request & { context?: any };
 
 type EnhanceRequest = (
-    request: NextRequest & { context?: any },
-) => EnhancedRequest | void | Promise<EnhancedRequest | void>;
+    request: RequestWithContext,
+) => RequestWithContext | void | Promise<RequestWithContext | void>;
 
 type EnhanceResponse = (
     response: NextResponse,
-    request: Request & { context?: any },
-) => Response | void | Promise<Response | void>;
+    request: RequestWithContext,
+) => NextResponse | void | Promise<NextResponse | void>;
 
 interface ProxyConfig {
     /**
@@ -26,10 +26,16 @@ interface ProxyConfig {
     enhanceResponse?: EnhanceResponse;
     methods?: string[];
     rewritePath?: (path: string) => string;
+    rewriteUrl?: (url: string) => string;
     fetch?: (request: Request) => Promise<Response>;
+    requestInit?: RequestInit;
+    responseInit?: ResponseInit;
 }
 
-type Handler = (request: NextRequest, params: { params: Promise<{ path: string[] }> }) => Promise<Response>;
+type HandlerParams = {
+    params: Promise<{ path: string[] }>;
+};
+type Handler = (request: NextRequest, params: HandlerParams) => Promise<Response>;
 
 type ProxyHandlers = {
     GET: Handler;
@@ -39,29 +45,57 @@ type ProxyHandlers = {
     // Allow other methods like PATCH, OPTIONS, HEAD
     [method: string]: Handler;
 };
+
+export type ProxyRouter = (request: NextRequest, params: HandlerParams) => Promise<string> | string;
+
 /**
  * Creates proxy handlers for GET, POST, PUT, DELETE.
  *
  * Use it to implement common or reverse proxying.
  *
- * @param proxyUrl The base URL of the upstream resource server.
+ * **Use path variable 'path' in the route to capture the path to be proxied.**
+ *
+ * @param proxyUrl The base URL of the upstream resource server or a function that returns the base URL based on the request and params.
  * @param config Configuration options.
  *
  * @example
+ * // In your Next.js route handler file (e.g., `app/api/proxy/[...path]/route.ts`):
  * const handlers = createProxyHandlers("https://api.example.com", {...});
  * export const { GET, POST, PUT, DELETE } = handlers;
  */
-export function createProxyHandlers(proxyUrl: string, config: ProxyConfig = {}): ProxyHandlers {
+export function createProxyHandlers(
+    proxyUrl: string | ProxyRouter,
+    {
+        rewritePath,
+        rewriteUrl,
+        enhanceRequest,
+        enhanceResponse,
+        methods,
+        fetch: customFetch,
+        requestInit,
+        responseInit,
+    }: ProxyConfig = {},
+): ProxyHandlers {
     async function handleProxy(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
         const { path: pathParts } = await params;
-        // Build target URL
-        let path = pathParts.join("/");
-        if (config.rewritePath) {
-            path = config.rewritePath(path);
-        }
-        if (!path.startsWith("/")) path = `/${path}`;
 
-        const url = `${proxyUrl}${path}${request.nextUrl.search}`;
+        let baseUrl = typeof proxyUrl === "string" ? proxyUrl : await proxyUrl(request, { params });
+        if (baseUrl.endsWith("/") && baseUrl.length > 1) {
+            baseUrl = baseUrl.slice(0, -1);
+        }
+
+        let proxyPath = pathParts.join("/");
+        if (rewritePath) {
+            proxyPath = rewritePath(proxyPath);
+        }
+        if (!proxyPath.startsWith("/")) {
+            proxyPath = `/${proxyPath}`;
+        }
+
+        let url = `${baseUrl}${proxyPath}${request.nextUrl.search}`;
+        if (rewriteUrl) {
+            url = rewriteUrl(url);
+        }
 
         // Copy request headers except hop-by-hop ones
         const headers: HeadersInit = {};
@@ -72,24 +106,29 @@ export function createProxyHandlers(proxyUrl: string, config: ProxyConfig = {}):
         });
 
         // Base init
-        let proxyRequest: Request = new NextRequest(new URL(url), {
+        let proxyRequest: RequestWithContext = new Request(new URL(url), {
             method: request.method,
             headers,
             body: request.body,
+            ...requestInit,
         });
 
-        const enhancedReq = await config.enhanceRequest?.(proxyRequest as NextRequest);
+        const enhancedReq = await enhanceRequest?.(proxyRequest);
         if (enhancedReq) {
             proxyRequest = enhancedReq;
         }
 
         // Proxy request
-        const res = await (config.fetch ? config.fetch(proxyRequest) : fetch(proxyRequest));
+        const res: Response = await (customFetch ? customFetch(proxyRequest) : fetch(proxyRequest));
 
-        let finalRes: Response = new NextResponse(res.body, { status: res.status, headers: res.headers });
+        let finalRes = new NextResponse(res.body, {
+            status: res.status,
+            headers: res.headers,
+            ...responseInit,
+        });
 
         // enhance response
-        const enhancedRes = await config.enhanceResponse?.(finalRes as NextResponse, proxyRequest);
+        const enhancedRes = await enhanceResponse?.(finalRes, proxyRequest);
         if (enhancedRes) {
             finalRes = enhancedRes;
         }
@@ -104,8 +143,8 @@ export function createProxyHandlers(proxyUrl: string, config: ProxyConfig = {}):
         DELETE: handleProxy,
     };
 
-    if (config.methods) {
-        for (const method of config.methods) {
+    if (methods) {
+        for (const method of methods) {
             if (!handlers[method]) {
                 handlers[method] = handleProxy;
             }
