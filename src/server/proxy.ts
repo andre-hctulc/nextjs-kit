@@ -13,23 +13,33 @@ type EnhanceResponse = (
 
 interface ProxyConfig {
     /**
-     * A function that can modify the request initializer (e.g. to add authentication).
-     * Add custom context data to the request by setting the `context` property.
+     * A function that can modify the proxy request.
      */
     enhanceRequest?: EnhanceRequest;
     /**
-     * A function that can modify the response (e.g. to add security headers).
-     * Also receives the request as second parameter with `context` property.
+     * A function that can modify the final response.
      *
      * Use {@link applySecurityHeaders} to add common security headers and remove identifying headers.
      */
     enhanceResponse?: EnhanceResponse;
+    /**
+     * Added to the proxy request initializer when creating the proxy request.
+     */
+    requestInit?: RequestInit;
+    /**
+     * Added to the response initializer when creating the final response.
+     */
+    responseInit?: ResponseInit;
+    /**
+     * HTTP methods to handle
+     *
+     * @default
+     * ["GET", "POST", "PUT", "DELETE"]
+     */
     methods?: string[];
     rewritePath?: (path: string) => string;
     rewriteUrl?: (url: string) => string;
     fetch?: (request: Request) => Promise<Response>;
-    requestInit?: RequestInit;
-    responseInit?: ResponseInit;
 }
 
 type HandlerParams = {
@@ -136,18 +146,12 @@ export function createProxyHandlers(
         return finalRes;
     }
 
-    const handlers: ProxyHandlers = {
-        GET: handleProxy,
-        POST: handleProxy,
-        PUT: handleProxy,
-        DELETE: handleProxy,
-    };
+    const handlers: ProxyHandlers = {} as ProxyHandlers;
+    const httpMethods = methods?.map((method) => method.toUpperCase()) ?? ["GET", "POST", "PUT", "DELETE"];
 
-    if (methods) {
-        for (const method of methods) {
-            if (!handlers[method]) {
-                handlers[method] = handleProxy;
-            }
+    for (const method of httpMethods) {
+        if (!handlers[method]) {
+            handlers[method] = handleProxy;
         }
     }
 
