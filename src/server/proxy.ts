@@ -46,6 +46,18 @@ type HandlerParams = {
 };
 type Handler = (request: NextRequest, params: HandlerParams) => Promise<Response>;
 
+const hopByHopHeaders = new Set([
+    "connection",
+    "host",
+    "keep-alive",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "te",
+    "trailer",
+    "transfer-encoding",
+    "upgrade",
+]);
+
 type ProxyHandlers = {
     GET: Handler;
     POST: Handler;
@@ -108,10 +120,16 @@ export function createProxyHandlers(
                 url = rewriteUrl(url);
             }
 
-            // Copy request headers except hop-by-hop ones
+            // Copy request headers except hop-by-hop ones.
+            const connectionHeaders = new Set(
+                request.headers
+                    .get("connection")
+                    ?.split(",")
+                    .map((header) => header.trim().toLowerCase()) ?? [],
+            );
             const headers: HeadersInit = {};
             request.headers.forEach((value, key) => {
-                if (!["host", "connection"].includes(key.toLowerCase())) {
+                if (!hopByHopHeaders.has(key.toLowerCase()) && !connectionHeaders.has(key.toLowerCase())) {
                     headers[key] = value;
                 }
             });
@@ -121,6 +139,7 @@ export function createProxyHandlers(
                 method: request.method,
                 headers,
                 body: request.body,
+                ...(request.body ? { duplex: "half" as const } : {}),
                 ...requestInit,
             });
 
