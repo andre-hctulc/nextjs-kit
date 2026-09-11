@@ -4,10 +4,13 @@ export type ParamValue<T = string> = T | T[] | undefined;
 
 export type RawParams<T = string> = Record<string, ParamValue<T>>;
 
+export type ParamsPromise = Promise<Record<string, string>>;
+export type SearchParamsPromise = Promise<Record<string, SearchParamValue>>;
+
 type SearchParamValue = string | undefined | string[];
 
 export interface PageProps {
-    params: Promise<{ [key: string]: string }>;
+    params: ParamsPromise;
     searchParams: Promise<{ [key: string]: SearchParamValue }>;
 }
 
