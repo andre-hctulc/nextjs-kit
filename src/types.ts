@@ -11,7 +11,7 @@ type SearchParamValue = string | undefined | string[];
 
 export interface PageProps {
     params: ParamsPromise;
-    searchParams: Promise<{ [key: string]: SearchParamValue }>;
+    searchParams: SearchParamsPromise;
 }
 
 export interface ErrorPageProps extends PageProps {
@@ -20,7 +20,7 @@ export interface ErrorPageProps extends PageProps {
 
 export type LayoutProps = {
     children?: ReactNode;
-    params: Promise<{ [key: string]: string }>;
+    params: ParamsPromise;
 };
 
 export type LayoutPropsWithSlots = LayoutProps & Partial<{ [slot: string]: ReactNode }>;
