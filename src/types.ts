@@ -1,13 +1,12 @@
 import { ReactNode } from "react";
 
 export type ParamValue<T = string> = T | T[] | undefined;
-
 export type RawParams<T = string> = Record<string, ParamValue<T>>;
 
 export type ParamsPromise = Promise<Record<string, string>>;
-export type SearchParamsPromise = Promise<Record<string, SearchParamValue>>;
 
 type SearchParamValue = string | undefined | string[];
+export type SearchParamsPromise = Promise<Record<string, SearchParamValue>>;
 
 export interface PageProps {
     params: ParamsPromise;
@@ -15,7 +14,8 @@ export interface PageProps {
 }
 
 export interface ErrorPageProps extends PageProps {
-    error: unknown;
+    error: Error & { digest?: string };
+    retry: () => void;
 }
 
 export type LayoutProps = {
