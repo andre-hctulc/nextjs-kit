@@ -144,25 +144,38 @@ export async function act<T>(
     }
 }
 
+function onExit(cleanUp: () => void) {
+    if (typeof window === "undefined") {
+        process.on("exit", cleanUp);
+    } else {
+        window.addEventListener("beforeunload", cleanUp);
+    }
+}
+
 /**
- * @param key Unique key for the value.
+ * Runs an action only once.
+ * @param key Unique key for the action.
  */
-export function initOnce<T>(key: string, value: () => T): T {
-    const glob: any = typeof window === "undefined" ? global : window;
+export function initOnce<T>(key: string, value: () => T, cleanUp?: (value: T) => void): T {
+    const g = typeof window === "undefined" ? global : window;
     key = "@initOnce:" + key;
-    if (key in glob) return glob[key];
-    return (glob[key] = value());
+    if (key in g) return (g as Record<string, any>)[key];
+    const result = value();
+    (g as Record<string, unknown>)[key] = result;
+    if (cleanUp) onExit(() => cleanUp(result));
+    return result;
 }
 
 /**
  * @param key Unique key for the action.
  */
-export function doOnce<T>(key: string, action: () => T) {
-    const glob: any = typeof window === "undefined" ? global : window;
+export function doOnce<T>(key: string, action: () => T, cleanUp?: () => void) {
+    const g: any = typeof window === "undefined" ? global : window;
     key = "@doOnce:" + key;
-    if (key in glob) return;
-    glob[key] = "done";
+    if (key in g) return;
+    g[key] = "done";
     action();
+    if (cleanUp) onExit(cleanUp);
 }
 
 export enum HttpStatus {
