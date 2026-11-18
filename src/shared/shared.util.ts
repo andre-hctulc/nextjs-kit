@@ -1,4 +1,4 @@
-import { ErrorPayload, SuccessObject } from "../types.js";
+import { ErrorPayload, SuccessObject } from "./shared.types.js";
 
 export function paramValue<T>(value: T | T[] | undefined): T | undefined {
     if (Array.isArray(value)) {

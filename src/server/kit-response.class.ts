@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server.js";
-import { CommonErrorBody } from "./server-types.js";
+import { CommonErrorBody } from "./server.types.js";
 
 /**
  * Extends the {@link NextResponse}

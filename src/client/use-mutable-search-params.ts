@@ -2,7 +2,7 @@
 
 import { ReadonlyURLSearchParams, useRouter, useSearchParams } from "next/navigation.js";
 import { useCallback } from "react";
-import { normalizeSearch, SearchInput } from "../system.js";
+import { normalizeSearch, SearchInput } from "../shared/system.util.js";
 
 type ParamValue = string | boolean | number | (string | boolean | number)[];
 

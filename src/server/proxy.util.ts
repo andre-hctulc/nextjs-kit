@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server.js";
-import { ErrorBoundary } from "./server-util.js";
+import { ErrorBoundary } from "./server.util.js";
 import { isRedirectError } from "next/dist/client/components/redirect-error.js";
 
 type EnhanceRequest = (request: Request) => Request | void | Promise<Request | void>;

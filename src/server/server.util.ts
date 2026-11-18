@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server.js";
-import { ServerError } from "./server-error.js";
-import { ErrorPayload } from "../types.js";
+import { ServerError } from "./server.error.js";
+import { ErrorPayload } from "../shared/shared.types.js";
 import { isRedirectError } from "next/dist/client/components/redirect-error.js";
 
 /**

@@ -1,4 +1,4 @@
-import { ParamsPromise } from "../types.js";
+import { ParamsPromise } from "../shared/shared.types.js";
 
 export interface CommonErrorBody {
     code: string | number;

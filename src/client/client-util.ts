@@ -1,5 +1,5 @@
 import { isRedirectError } from "next/dist/client/components/redirect-error.js";
-import { ErrorObject, SuccessObject } from "../types.js";
+import { ErrorObject, SuccessObject } from "../shared/shared.types.js";
 
 /**
  * Run an action with error handling.

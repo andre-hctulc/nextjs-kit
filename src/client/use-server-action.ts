@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isRedirectError } from "next/dist/client/components/redirect-error.js";
-import { ErrorObject, SuccessObject } from "../types.js";
+import { ErrorObject, SuccessObject } from "../shared/shared.types.js";
 
 type ServerAction = (...args: any) => any;
 type ServerActionResult<T> = T extends ServerAction ? Awaited<ReturnType<T>> : never;
