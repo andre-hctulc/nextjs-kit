@@ -21,7 +21,7 @@ export async function parseJson<T = any>(request: NextRequest): Promise<T> {
     }
 }
 
-export type ErrorBoundary<E = unknown, R = any> = (error: E, data: any) => R | Promise<R>;
+export type ErrorBoundary<E = unknown, R = any> = (error: E, context: any) => R | Promise<R>;
 
 export function combineErrorBoundaries<E = unknown, R = any>(
     ...boundaries: ErrorBoundary<
@@ -29,9 +29,9 @@ export function combineErrorBoundaries<E = unknown, R = any>(
         R | undefined | void | Promise<Awaited<R>> | Promise<undefined> | Promise<void>
     >[]
 ): ErrorBoundary<E, R> {
-    return async (err: E, data: any) => {
+    return async (err: E, context: any) => {
         for (const boundary of boundaries) {
-            const result = await boundary(err, data);
+            const result = await boundary(err, context);
             if (result !== undefined) {
                 return result;
             }
@@ -41,7 +41,7 @@ export function combineErrorBoundaries<E = unknown, R = any>(
 }
 
 export interface SendOptions {
-    data?: any;
+    context?: any;
     errorBoundary?: ErrorBoundary<unknown, Response>;
 }
 
@@ -103,16 +103,16 @@ export async function send(
         if (isRedirectError(err)) throw err;
 
         if (options.errorBoundary) {
-            return options.errorBoundary(err, options.data);
+            return options.errorBoundary(err, options.context);
         }
 
         const sendErrorBoundary = createSendErrorBoundary();
-        return sendErrorBoundary(err, options.data);
+        return sendErrorBoundary(err, options.context);
     }
 }
 
 export interface ActOptions<T = any> {
-    data?: any;
+    context?: any;
     errorBoundary?: ErrorBoundary<unknown, T>;
 }
 
@@ -137,7 +137,7 @@ export async function act<T>(
         if (isRedirectError(err)) throw err;
 
         if (options.errorBoundary) {
-            return options.errorBoundary(err, options.data) as any;
+            return options.errorBoundary(err, options.context) as any;
         }
 
         throw err;
