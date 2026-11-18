@@ -144,6 +144,9 @@ export async function act<T>(
     }
 }
 
+/**
+ * Registers a cleanup function to be called when the process exits or the window unloads.
+ */
 function onExit(cleanUp: () => void) {
     if (typeof window === "undefined") {
         process.on("exit", cleanUp);
